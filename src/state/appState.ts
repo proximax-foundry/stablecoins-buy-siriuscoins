@@ -1,5 +1,4 @@
 import { reactive } from "vue";
-import { BuildTransactions } from "../util/buildTransactions"
 import { ChainAPICall } from "../models/REST/chainAPICall"
 import { NetworkType, MosaicId, NamespaceId, NamespaceInfo } from "tsjs-xpx-chain-sdk";
 import { AssetInfo } from "../models/assetInfo";
@@ -43,7 +42,6 @@ interface TxnSwapLog{
 }
 
 interface appStateInterface {
-    buildTxn: BuildTransactions | null
     nativeToken: NativeToken;
     chainAPI: ChainAPICall | null;
     networkType: NetworkType;
@@ -67,7 +65,6 @@ interface appStateInterface {
 }
 
 export const AppState = reactive<appStateInterface>({
-    buildTxn: null,
     nativeToken: {
         assetId: '',
         divisibility: 6,

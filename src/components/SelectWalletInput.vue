@@ -31,8 +31,6 @@
 
 <script>
 import { networkState } from '@/state/networkState';
-import { NetworkStateUtils } from '@/state/utils/networkStateUtils';
-import { walletState } from '@/state/walletState';
 import { computed, defineComponent, ref, watch, getCurrentInstance } from 'vue';
 
 export default defineComponent({
@@ -50,23 +48,6 @@ export default defineComponent({
         selectedWallet.value = wallet
         toggleSelection.value = !toggleSelection.value
     }
-    const wallets = computed(
-      () =>{
-        var w = [];
-        walletState.wallets.filterByNetworkName(networkState.chainNetworkName).forEach((wallet)=>{
-          w.push({
-            value: wallet.name,
-            label: wallet.name,
-          });
-        });
-        w.sort((a, b) => {
-          if (a.label > b.label) return 1;
-          if (a.label < b.label) return -1;
-          return 0;
-        });
-        return w;
-      }
-    );
     const updateWalletValue=()=>{
         emitter.emit('select-wallet',selectedWallet.value)
     }

@@ -91,7 +91,7 @@ dynamic_configuration = {
           "swapData":{
             "swap_XPX_ETH_URL": "https://swap-gateway.xpxsirius.io/eth",
             "swap_XPX_BSC_URL": "https://swap-gateway.xpxsirius.io/bsc",
-            "swap_IN_SERVICE_URL": "https://swap-gateway.xpxsirius.io",
+            "swap_IN_SERVICE_URL": "https://swap-gateway.xpxsirius.io/sirius",
             "swap_SERVICE_URL": "https://swap-gateway.xpxsirius.io",
             "gasPriceConsultURL": "https://swap-gateway.xpxsirius.io/gas",
             "priceConsultURL": "https://swap-gateway.xpxsirius.io",
@@ -116,8 +116,6 @@ dynamic_configuration = {
               ]
             }
           }
-        },
-        "Sirius Testnet 1": {
         },
         "Sirius Testnet 2": {
           "swapData":{
@@ -149,19 +147,5 @@ dynamic_configuration = {
             }
           }
         }
-    },
-    theme: {
-        "jdenticonConfig": {
-             "hues": [211],
-             "lightness": {
-               "color": [0.32, 0.80],
-               "grayscale": [0.17, 0.82]
-             },
-             "saturation": {
-               "color": 1.00,
-               "grayscale": 0.00
-             },
-             "backColor": "#fff"
-           }
-     }
+    }
 }

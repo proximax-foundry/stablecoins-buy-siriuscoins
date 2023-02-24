@@ -29,8 +29,6 @@
         }
       }
     },
-    "Sirius Testnet 1": {
-    },
     "Sirius Testnet 2": {
       "swapData":{
         "swap_XPX_ETH_URL": "https://bctestnet-swap-gateway.xpxsirius.io/eth",

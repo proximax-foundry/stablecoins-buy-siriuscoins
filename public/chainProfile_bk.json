@@ -1,4 +1,32 @@
 {
+    "Sirius Mainnet": {
+      "version": "0.7.1",
+      "apiNodes":[
+          "betelgeuse.xpxsirius.io"
+      ],
+      "httpPort": 3000,
+      "generationHash": "10540AD3A1BF46B1A05D8B1CF0252BC9FB2E0B53CFD748262B0CE341CEAFEB6B",
+      "network":{
+        "type": 184,
+        "currency":{
+            "name": "XPX",
+            "namespace": "prx.xpx",
+            "assetId": "",
+            "namespaceId": "bffb42a19116bdf6",
+            "divisibility": 6
+        }
+      },
+      "secured": false,
+      "chainExplorer": {
+        "url": "https://explorer.xpxsirius.io",
+        "blockRoute": "#/block",
+        "publicKeyRoute": "#/account",
+        "addressRoute": "#/account",
+        "hashRoute": "#/tx",
+        "namespaceInfoRoute": "#/namespace",
+        "assetInfoRoute": "#/asset"
+      }
+    },
     "Sirius Testnet 2": {
       "version": "0.0.6",
       "apiNodes":[

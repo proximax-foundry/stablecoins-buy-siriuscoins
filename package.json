@@ -1,6 +1,6 @@
 {
-  "name": "web-wallet-vuejs",
-  "version": "1.4.0",
+  "name": "stablecoins-buy-siriuscoins",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -27,9 +27,7 @@
     "crypto-random-string": "^4.0.0",
     "ethers": "^5.4.1",
     "file-saver": "^2.0.5",
-    "jdenticon": "^3.1.1",
     "js-sha3": "^0.8.0",
-    "jsonwebtoken": "^8.5.1",
     "jspdf": "^2.3.1",
     "jszip": "^3.10.1",
     "maska": "^1.4.1",
