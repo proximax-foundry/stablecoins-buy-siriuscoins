@@ -1,4 +1,4 @@
-# ts-dev-wallet
+# stablecoins-buy-siriuscoins
 
 ## Project setup
 ```
@@ -21,8 +21,8 @@ npm run lint
 ```
 
 ### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-
+This application only support single network and no network selection, please set only 1 network in the 
+public/chainProfile.json
 
 ### tailwind configuration
 To be added
