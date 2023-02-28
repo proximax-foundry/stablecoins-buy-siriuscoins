@@ -1,6 +1,6 @@
 <template>
   <header class="z-10 fixed w-full">
-    <div class="header-height flex items-stretch lg:pr-2 bg-gray-50 filter drop-shadow-xl">
+    <div class="header-height flex items-stretch lg:pr-2 filter drop-shadow-xl bg-navy-primary">
       <div class=" flex justify-center items-center lg:bg-navy-primary logo-header">
         <router-link :to="{ name: 'ViewServicesStableCoinsBuy' }">
           <img src="@/assets/img/sirius-logo-whitetext.svg" class="w-24 -ml-4 tsm:w-40 hidden lg:inline-block">
@@ -8,19 +8,19 @@
       </div>
       <div class=" flex items-center ml-auto mr-28 lg:mr-auto lg:ml-10 logo-header">
         <router-link :to="{ name: 'ViewServicesStableCoinsBuy' }">
-          <img src="@/assets/img/sirius-logo-blacktext.svg" class="w-40 lg:hidden">
+          <img src="@/assets/img/sirius-logo-whitetext.svg" class="w-40 lg:hidden">
         </router-link>
       </div>
 
       <div class="flex flex-row ml-auto h-full">
-        <div class="hidden w-40 pl-3 text-center lg:flex items-center left-gray-line">
+        <div class="hidden w-40 pl-3 text-center lg:flex items-center">
           <div class="lg:flex lg:items-center">
             <img src="@/assets/img/icon-testnet-block.svg" class="w-3 lg:w-7 block lg:inline-block"
               :title="chainAPIEndpoint" v-if="wideScreen && !isMainnet">
             <img src="@/assets/img/icon-mainnet-block.svg" class="w-3 lg:w-7 block lg:inline-block"
               :title="chainAPIEndpoint" v-if="wideScreen && isMainnet">  
             <div class="block lg:inline-block text-txs text-white text-left lg:ml-2">
-              <div class="text-xxs lg:text-tsm text-navy-primary">
+              <div class="text-xxs lg:text-tsm text-white">
                 {{ networkState.chainNetworkName }}
               </div>
             </div>
