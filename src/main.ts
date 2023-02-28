@@ -3,23 +3,18 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import 'animate.css';
-import vueDebounce from 'vue-debounce'
+import vue3Debounce from 'vue-debounce'
 import { VuePassword } from 'vue-password';
 import mitt from 'mitt';
 import PrimeVue from 'primevue/config';
 import "primeicons/primeicons.css";
 import { appSetting } from '@/config/appSetting';
-// import "primevue/resources/primevue.min.css";
-// import "primevue/resources/themes/saga-blue/theme.css";
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
-import { walletState } from './state/walletState';
-import { WalletStateUtils } from './state/utils/walletStateUtils';
 import { NetworkStateUtils } from './state/utils/networkStateUtils';
 import { ChainUtils } from './util/chainUtils';
 import { ChainAPICall } from './models/REST/chainAPICall';
 import { AppStateUtils } from './state/utils/appStateUtils';
-import { WalletMigration } from './models/walletMigration';
 import { ChainProfile, ChainProfileConfig, ChainProfileNames, ChainSwapConfig, ThemeStyleConfig, ChainProfileName } from "./models/stores/"
 
 // Import Font Awesome Icons
@@ -60,7 +55,7 @@ app.use(ConfirmationService);
 app.use(ToastService);
 app.use(i18n);
 app.use(VWave);
-app.use(vueDebounce);
+app.use(vue3Debounce);
 app.use(VueBlocksTree, defaultoptions)
 app.mount('#app');
 // Use Components
@@ -73,35 +68,6 @@ app.component('Sidebar', Sidebar);
 app.component('Tree',Tree);
 
 AppStateUtils.addNewReadyStates('chainProfile');
-AppStateUtils.addNewReadyStates('theme');
-AppStateUtils.addNewReadyStates('checkSession');
-AppStateUtils.addNewReadyStates('walletMigration');
-AppStateUtils.addNewReadyStates('loadLoadedData');
-
-const loadThemeConfig = async () => {
-  try {
-    let config: any;
-
-    if (location.protocol === "file:") {
-      config = appSetting.theme;
-    }
-    else {
-      config = await fetch('./themeConfig.json', {
-        headers: {
-          'Cache-Control': 'no-store',
-          'Pragma': 'no-cache'
-        }
-      }).then((res) => res.json()).then((configInfo) => { return configInfo });
-    }
-    let themeConfig = new ThemeStyleConfig('ThemeStyleConfig');
-    themeConfig.updateConfig(config);
-    themeConfig.saveToLocalStorage();
-    AppStateUtils.setStateReady('theme');
-  } catch (e) {
-    AppStateUtils.setStateReady('theme');
-    console.error(e);
-  }
-}
 
 const chainProfileIntegration = async () => {
   try {
@@ -228,8 +194,6 @@ const chainProfileIntegration = async () => {
   AppStateUtils.setStateReady('chainProfile');
 }
 
-
-
 const chainSwapIntegration = async () => {
   try {
     let swapInfo: ChainSwapConfig[];
@@ -264,41 +228,5 @@ const chainSwapIntegration = async () => {
   }
 };
 
-loadThemeConfig();
 chainProfileIntegration();
 chainSwapIntegration();
-
-const runWalletMigration = async () => {
-
-  let walletMigration = new WalletMigration();
-
-  walletMigration.runPatching();
-
-  AppStateUtils.setStateReady('walletMigration');
-}
-
-runWalletMigration();
-
-
-
-
-// check from session when page refreshed
-if (!walletState.currentLoggedInWallet) {
-  // reload loaded data
-  WalletStateUtils.checkSessionLoadedData();
-  AppStateUtils.setStateReady('loadLoadedData');
-
-  // check sessionStorage
-  if (!WalletStateUtils.checkFromSession()) {
-    NetworkStateUtils.checkSession();
-    AppStateUtils.setStateReady('checkSession');
-
-    router.push({ name: "Home" });
-  }
-
-  AppStateUtils.setStateReady('checkSession');
-  AppStateUtils.setStateReady('loadLoadedData');
-}
-
-// NetworkStateUtils.checkDefaultNetwork();
-

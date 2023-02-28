@@ -3,7 +3,6 @@ import { AppState } from "../appState";
 import { SessionService } from "../../models/stores/sessionService"
 import { ChainProfile, ChainProfileConfig, ChainProfileNames, ChainProfilePreferences } from "../../models/stores/"
 import { ChainAPICall } from "@/models/REST/chainAPICall";
-import { BuildTransactions } from "@/util/buildTransactions";
 import { ChainUtils } from "@/util/chainUtils"
 import { FeeCalculationStrategy, NetworkType } from "tsjs-xpx-chain-sdk";
 
@@ -77,12 +76,6 @@ export class NetworkStateUtils{
     AppState.txnActivityLog = [];
     AppState.txnCosignLog = [];
     AppState.txnSwapLog = [];
-    if(AppState.networkType === NetworkType.PRIVATE || AppState.networkType === NetworkType.PRIVATE_TEST){
-      AppState.buildTxn = new BuildTransactions(chainProfile.network.type, chainProfile.generationHash, FeeCalculationStrategy.ZeroFeeCalculationStrategy);
-    }
-    else{
-      AppState.buildTxn = new BuildTransactions(chainProfile.network.type, chainProfile.generationHash);
-    }
 
     const chainProfileConfig = new ChainProfileConfig(networkState.chainNetworkName);
 

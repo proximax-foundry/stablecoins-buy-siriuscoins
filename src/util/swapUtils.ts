@@ -1,13 +1,6 @@
 import jsPDF from 'jspdf';
 import qrcode from 'qrcode-generator';
-import { Account, Address, AggregateTransaction, SignedTransaction } from "tsjs-xpx-chain-sdk";
-import { pdfImg } from '@/modules/services/submodule/mainnetSwap/pdfBackground';
-import { walletState } from '@/state/walletState';
-import { networkState } from '@/state/networkState';
-import { WalletUtils } from "@/util/walletUtils";
-import { ChainUtils } from "@/util/chainUtils";
-import { ChainAPICall } from "@/models/REST/chainAPICall";
-import { AppState } from '@/state/appState';
+import { pdfImg } from '@/modules/services/submodule/buySiriusCoins/pdfBackground';
 
 export const abi = [
   {
@@ -724,16 +717,6 @@ export class SwapUtils {
 
     doc.setProperties({ title: 'Swap Certificate'});
     doc.save('swap_certificate.pdf');
-  }
-
-  static signTransaction(selectedAddress: string, walletPassword: string, aggreateCompleteTransaction: AggregateTransaction) :SignedTransaction {
-    const accAddress = Address.createFromRawAddress(selectedAddress);
-    const accountDetails = walletState.currentLoggedInWallet.accounts.find((account) => account.address == accAddress.plain());
-    const encryptedPassword = WalletUtils.createPassword(walletPassword);
-    let privateKey = WalletUtils.decryptPrivateKey(encryptedPassword, accountDetails.encrypted, accountDetails.iv);
-    const account = Account.createFromPrivateKey(privateKey, AppState.networkType);
-    let signedTx = account.sign(aggreateCompleteTransaction, networkState.currentNetworkProfile.generationHash);
-    return signedTx;
   }
 
   static getETH_GasLimit = async (baseUrl: string):Promise<any> => {
