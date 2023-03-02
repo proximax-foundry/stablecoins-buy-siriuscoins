@@ -4,7 +4,7 @@ let publicPath = '/';
 
 switch(process.env.NODE_ENV){
     case 'staging':
-        publicPath = '/web-wallet-vuejs'
+        publicPath = '/stablecoins-buy-siriuscoins'
         break;
     case 'production':
         publicPath = ''
