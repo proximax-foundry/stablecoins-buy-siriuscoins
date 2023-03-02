@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class='lg:w-9/12 ml-2 mr-2 lg:ml-auto lg:mr-auto mt-5 bg-white'>
-      <div class='mt-6 px-6 py-10 border filter shadow-lg text-center'>
+    <div class='lg:w-9/12 ml-2 mr-2 lg:ml-auto lg:mr-auto mt-5 bg-white border border-white rounded-md shadow-lg'>
+      <div class='mt-6 px-6 py-10 filter text-center'>
         <div class="text-md mb-3">Buy {{ selectedToToken }}</div>
         <div>
           <div v-if="!isChainIdValid && isWalletConnected" class="error_box error error-text">
@@ -46,10 +46,6 @@
           </div>
           <div class="flex mt-4">
             <AddressInputClean :placeholder="$t('transfer.transferPlaceholder')" v-model="siriusAddress" v-debounce:1000="checkRecipient" :showError="showAddressError" />
-            <div @click="toggleContact=!toggleContact" class=' border rounded-md cursor-pointer flex flex-col justify-around p-2 ' >
-              <font-awesome-icon icon="id-card-alt" class=" text-blue-primary ml-auto mr-auto "></font-awesome-icon>
-              <div class='text-xxs text-blue-primary font-semibold uppercase'>{{$t('general.select')}}</div>
-            </div>
           </div>
           <div v-if="toggleContact" class=" border ">
           <div class='text-xxs text-left text-gray-300 font-semibold py-2 px-2 uppercase'>{{$t('general.importFromAB')}}</div>
