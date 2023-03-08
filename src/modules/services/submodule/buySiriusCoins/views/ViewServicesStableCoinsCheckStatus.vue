@@ -143,7 +143,7 @@ export default {
       isLoaded.value = true;
       isSuccess.value = false;
       customErrorMessage.value = '';
-      console.log('run function')
+
       try {
         let url = '';
         if(hashType.value == 'BSC'){
