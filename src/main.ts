@@ -19,7 +19,7 @@ import { ChainProfile, ChainProfileConfig, ChainProfileNames, ChainSwapConfig, T
 
 // Import Font Awesome Icons
 import { library } from '@fortawesome/fontawesome-svg-core';
-import {
+import { faCheckSquare,
   fas, faTimes, faEye, faEyeSlash, faLock, faWallet, faKey, faCheck, faExclamation, faBars, faCopy, faSignOutAlt, faCaretDown, faEdit, faTimesCircle, faCheckCircle, faTrashAlt, faIdCardAlt, faDownload,
   faCoins, faComment, faBell, faCircle, faChevronUp, faChevronDown, faTrashRestore, faFileExport, faFileImport, faArrowRight, faArrowCircleRight, faAngleRight, faAt, faEquals, faNotEqual, faLink, faUnlink,
   faExternalLinkAlt, faHashtag, faShoppingBag
@@ -42,7 +42,7 @@ import Sidebar from 'primevue/sidebar'
 import Tree from 'primevue/tree'
 
 library.add(
-  fas, faTimes, faEye, faEyeSlash, faLock, faWallet, faKey, faCheck, faExclamation, faBars, faCopy, faSignOutAlt, faCaretDown, faEdit, faTimesCircle, faCheckCircle, faTrashAlt, faIdCardAlt, faDownload,
+  faCheckSquare, fas, faTimes, faEye, faEyeSlash, faLock, faWallet, faKey, faCheck, faExclamation, faBars, faCopy, faSignOutAlt, faCaretDown, faEdit, faTimesCircle, faCheckCircle, faTrashAlt, faIdCardAlt, faDownload,
   faCoins, faComment, faBell, faCircle, faChevronUp, faChevronDown, faTrashRestore, faFileExport, faFileImport, faArrowRight, faArrowCircleRight, faAngleRight, faAt, faEquals, faNotEqual, faLink, faUnlink, faExternalLinkAlt, faHashtag, faShoppingBag
 );
 const app = createApp(App);

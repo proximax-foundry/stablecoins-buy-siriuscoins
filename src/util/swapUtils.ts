@@ -871,6 +871,14 @@ export class SwapUtils {
     }
     return returnResponse;
   }
+
+  static getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(baseUrl: string, network: string, txnHash: string){
+    return `${baseUrl}/swap/${network}/${txnHash}`;
+  }
+
+  static getIncoming_BSCBuySiriusTokenCheckStatus_URL(baseUrl: string, txnHash: string){
+    return `${baseUrl}/swapByTx/${txnHash}`;
+  }
 }
 
 interface paramResponse {
