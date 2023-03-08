@@ -6,29 +6,29 @@
         <div>
           <div class="mt-10 success_box success success-text" v-if="isSuccess">
             <div class="font-normal">
-              <div class="flex my-1">
-                <div class="w-56 text-right mr-4">BSC Transaction Hash:</div>
-                <div class="font-semibold"><a :href="remoteExplorerLink + remoteTxnHash" target=_new class="hover:underline">{{ remoteTxnHash.substring(0, 7) + '...' + remoteTxnHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
+              <div class="md:flex my-3 md:my-1">
+                <div class="md:w-56 text-left md:text-right mr-4">BSC Transaction Hash:</div>
+                <div class="font-semibold text-left"><a :href="remoteExplorerLink + remoteTxnHash" target=_new class="hover:underline">{{ remoteTxnHash.substring(0, 7) + '...' + remoteTxnHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
-              <div class="flex my-1">
-                <div class="w-56 text-right mr-4">Sirius Transaction Hash</div>
-                <div class="font-semibold"><a :href="explorerLink + siriusTransactionHash" target=_new class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
+              <div class="md:flex my-3 md:my-1">
+                <div class="md:w-56 text-left md:text-right mr-4">Sirius Transaction Hash</div>
+                <div class="font-semibold text-left"><a :href="explorerLink + siriusTransactionHash" target=_new class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
-              <div class="flex my-1">
-                <div class="w-56 text-right mr-4">Status</div>
-                <div class="font-semibold">{{ txnStatus }}</div>
+              <div class="md:flex my-3 md:my-1">
+                <div class="md:w-56 text-left md:text-right mr-4">Status</div>
+                <div class="font-semibold text-left">{{ txnStatus }}</div>
               </div>
-              <div class="flex my-1">
-                <div class="w-56 text-right mr-4">Sirius Recipient Address</div>
-                <div class="font-semibold">{{ siriusAddress }}</div>
+              <div class="md:flex my-3 md:my-1">
+                <div class="md:w-56 text-left md:text-right mr-4">Sirius Recipient Address</div>
+                <div class="font-semibold text-left">{{ siriusAddress }}</div>
               </div>
-              <div class="flex my-1">
-                <div class="w-56 text-right mr-4">Amount Received</div>
-                <div class="font-semibold">{{ amount }}</div>
+              <div class="md:flex my-3 md:my-1">
+                <div class="md:w-56 text-left md:text-right mr-4">Amount Received</div>
+                <div class="font-semibold text-left">{{ amount }}</div>
               </div>
-              <div class="flex my-1">
-                <div class="w-56 text-right mr-4">Time</div>
-                <div class="font-semibold">{{ time }}</div>
+              <div class="md:flex my-3 md:my-1">
+                <div class="md:w-56 text-left md:text-right mr-4">Time</div>
+                <div class="font-semibold text-left">{{ time }}</div>
               </div>
             </div>
           </div>
