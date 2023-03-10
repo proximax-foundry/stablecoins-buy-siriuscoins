@@ -12,7 +12,7 @@
               </div>
               <div class="md:flex my-3 md:my-1" v-if="siriusTransactionHash">
                 <div class="md:w-56 text-left md:text-right mr-4">Sirius Transaction Hash</div>
-                <div class="font-semibold text-left"><a :href="explorerLink + siriusTransactionHash" target=_blank class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
+                <div class="font-semibold text-left"><a :href="explorerLink() + siriusTransactionHash" target=_new class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
               <div class="md:flex my-3 md:my-1">
                 <div class="md:w-56 text-left md:text-right mr-4">Status</div>
