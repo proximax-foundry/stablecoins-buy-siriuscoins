@@ -201,7 +201,7 @@ export default {
                 }
               }
             }catch(err){
-              txnStatus.value = 'Sirius Transaction NOT FOUND. Please try to check again within 30 seconds if it is a new swap.';
+              txnStatus.value = 'Sirius Transaction NOT FOUND. Please check again within 30 seconds if it is a new swap.';
               statusNotificationClassStyle.value = 'error_box error';
             }
           }else{
