@@ -179,7 +179,7 @@ export default {
                   txnStatus.value = 'SUCCESS';
                   statusNotificationClassStyle.value = 'success_box success';
                 }else{
-                  txnStatus.value = 'FAILED';
+                  txnStatus.value = 'Sirius Transaction FAILED';
                   statusNotificationClassStyle.value = 'error_box error';
                 }
               }
