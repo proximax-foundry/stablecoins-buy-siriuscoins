@@ -4,7 +4,7 @@
       <div class='mt-6 px-6 py-10 filter text-center'>
         <div class="text-md mb-3">Check Buy Status</div>
         <transition name="slide">
-          <div class="mt-10" :class="txnStatus=='SUCCESS'?'success_box success':'pending_box pending'" v-if="isSuccess">
+          <div class="mt-10" :class="statusNotificationClassStyle" v-if="isSuccess">
             <div class="font-normal">
               <div class="md:flex my-3 md:my-1">
                 <div class="md:w-56 text-left md:text-right mr-4">BSC Transaction Hash:</div>
@@ -12,7 +12,7 @@
               </div>
               <div class="md:flex my-3 md:my-1" v-if="siriusTransactionHash">
                 <div class="md:w-56 text-left md:text-right mr-4">Sirius Transaction Hash</div>
-                <div class="font-semibold text-left"><a :href="explorerLink() + siriusTransactionHash" target=_new class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
+                <div class="font-semibold text-left"><a :href="explorerLink() + siriusTransactionHash" target=_blank class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
               <div class="md:flex my-3 md:my-1">
                 <div class="md:w-56 text-left md:text-right mr-4">Status</div>
@@ -95,6 +95,7 @@ export default {
     const route = useRoute();
 
     const isLoaded = shallowRef(false);
+    const statusNotificationClassStyle = ref('');
 
     let swapData = new ChainSwapConfig(networkState.chainNetworkName);
     swapData.init();
@@ -171,13 +172,24 @@ export default {
             try{
               if(AppState.isReady){
                 let siriusTxn = await AppState.chainAPI.transactionAPI.getTransactionStatus(json.siriusTxnHash);
-                txnStatus.value = siriusTxn.status.toUpperCase();
+                if(siriusTxn.group == 'partial' || siriusTxn.group == 'unconfirmed'){
+                  txnStatus.value = 'PENDING';
+                  statusNotificationClassStyle.value = 'pending_box pending';
+                }else if(siriusTxn.group == 'confirmed'){
+                  txnStatus.value = 'SUCCESS';
+                  statusNotificationClassStyle.value = 'success_box success';
+                }else{
+                  txnStatus.value = 'Sirius Transaction FAILED';
+                  statusNotificationClassStyle.value = 'error_box error';
+                }
               }
             }catch(err){
               txnStatus.value = 'Sirius Transaction FAILED';
+              statusNotificationClassStyle.value = 'error_box error';
             }
           }else{
             txnStatus.value = 'PENDING';
+            statusNotificationClassStyle.value = 'pending_box pending';
           }
           siriusAddress.value = Helper.createAddress(json.siriusAddress).pretty();
           amount.value = Helper.convertToCurrency(json.receiveAmount, 0) + ' ' + json.toToken;
@@ -199,6 +211,7 @@ export default {
     
 
     return {
+      statusNotificationClassStyle,
       amount,
       explorerLink,
       remoteExplorerLink,
