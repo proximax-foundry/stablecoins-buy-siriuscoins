@@ -24,7 +24,7 @@
           </div>
           <div class="mt-10 success_box success success-text" v-if="processing">
             <div class="mb-2">Congratulation! The swap process has already started!</div>
-            <div class="font-normal relative mb-2"><b>Transaction hash: </b><a :href="explorerLink + transactionHash" target=_new class="hover:underline">{{ transactionHash.substring(0, 7) + '...' + transactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
+            <div class="font-normal relative mb-2"><b>Transaction hash: </b><a :href="explorerLink + transactionHash" target=_blank class="hover:underline">{{ transactionHash.substring(0, 7) + '...' + transactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
             <div class="font-normal">Swap process may take a few hours to complete. Please save a copy of your certificate. It is needed in the event of an error.</div>
             <div><button type="button" class="w-40 hover:shadow-sm bg-blue-primary text-white text-xs hover:opacity-50 rounded font-bold px-3 py-2 border border-blue-primary outline-none mt-2 mb-2" @click="saveCertificate">{{$t('general.certificate')}}</button></div>
           </div>
