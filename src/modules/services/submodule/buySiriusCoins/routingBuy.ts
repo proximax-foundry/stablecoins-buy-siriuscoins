@@ -7,5 +7,14 @@ export const BuyRoutes = [
       title: "Buy",
     }
   },
+
+  {
+    path: '/check-status',
+    name: 'ViewServicesStableCoinsCheckStatus',
+    component: () => import('@/modules/services/submodule/buySiriusCoins/views/ViewServicesStableCoinsCheckStatus.vue'),
+    meta: {
+      title: "Check Status",
+    }
+  },
 ];
 

@@ -12,7 +12,11 @@
         </router-link>
       </div>
 
-      <div class="flex flex-row ml-auto h-full">
+      <div class="flex flex-row ml-auto h-full items-center">
+        <router-link :to="{ name: 'ViewServicesStableCoinsCheckStatus' }" class="text-xxs lg:text-tsm text-gray-300 flex items-center hover:underline mr-2">
+          <font-awesome-icon icon="check-square" class="mr-2 text-sm sm:text-xl" style="color: #E6A11F"></font-awesome-icon>
+          <div>Check status</div>
+        </router-link>
         <div class="hidden w-40 pl-3 text-center lg:flex items-center">
           <div class="lg:flex lg:items-center">
             <img src="@/assets/img/icon-testnet-block.svg" class="w-3 lg:w-7 block lg:inline-block"

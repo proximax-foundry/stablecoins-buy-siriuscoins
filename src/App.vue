@@ -86,7 +86,7 @@
         <div class="flex flex-col min-full-screen">
           <router-view class="mt-10 lg:mt-16 flex-grow px-5 pt-5" :key="$route.path"></router-view>
           <footer class="md:h-9 mt-10 text-center sm:text-justify sm:flex text-txs md:text-xs sm:justify-between text-white px-10 flex-grow-0">
-            <div class="ml-2 sm:ml-0">{{$t('home.copyright')}} <a href="https://t.me/proximaxhelpdesk" target=_new class="text-white hover:underline">{{$t('home.helpdesk')}}</a> </div>
+            <div class="ml-2 sm:ml-0">{{$t('home.copyright')}} <a href="https://t.me/proximaxhelpdesk" target=_blank class="text-white hover:underline">{{$t('home.helpdesk')}}</a> </div>
             <div class="mr-2 sm:mr-0 py-2 sm:py-0"><span> {{$t('home.version')}} {{ versioning }}</span></div>
           </footer>
         </div>
