@@ -7,7 +7,7 @@
           <div class="mt-10" :class="statusNotificationClassStyle" v-if="isSuccess">
             <div class="font-normal">
               <div class="md:flex my-3 md:my-1">
-                <div class="md:w-56 text-left md:text-right mr-4">BSC Transaction Hash:</div>
+                <div class="md:w-56 text-left md:text-right mr-4">{{ remoteNetwork }} Transaction Hash:</div>
                 <div class="font-semibold text-left"><a :href="remoteExplorerLink + remoteTxnHash" target=_blank class="hover:underline">{{ remoteTxnHash.substring(0, 7) + '...' + remoteTxnHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
               <div class="md:flex my-3 md:my-1" v-if="siriusTransactionHash">
@@ -118,6 +118,7 @@ export default {
     const customErrorMessage = ref('');
     const transactionHash = ref('');
     const hashType = ref('BSC');
+    const remoteNetwork = ref('BSC');
 
     const disabledCheckStatus = computed(() => {
       if(isLoaded.value){
@@ -126,7 +127,7 @@ export default {
       if(hashType.value == 'BSC'){
         // check for BSC txn type
         if(transactionHash.value.length == 66){
-          if(transactionHash.value.substring(0, 2).toLocaleUpperCase() == '0X'){
+          if(transactionHash.value.substring(0, 2).toUpperCase() == '0X'){
             return false
           }
           return true;
@@ -152,14 +153,13 @@ export default {
     const txnStatus = ref('');
     const time = ref('');
     const explorerLink = () =>{
-    if(!networkState.currentNetworkProfile){
+      if(!networkState.currentNetworkProfile){
         return ''
+      }
+      return networkState.currentNetworkProfile.chainExplorer.url + '/' + networkState.currentNetworkProfile.chainExplorer.hashRoute + '/';
     }
-    return networkState.currentNetworkProfile.chainExplorer.url + '/' + networkState.currentNetworkProfile.chainExplorer.hashRoute + '/';
-}
     const remoteExplorerLink = ref('');
-    remoteExplorerLink.value = hashType.value === 'BSC'?swapData.BSCScanUrl:swapData.ETHScanUrl;
-
+    
     const checkStatus = async() => {
       isLoaded.value = true;
       isSuccess.value = false;
@@ -182,6 +182,8 @@ export default {
         if(response.status == 200){ // data.status == 'fulfilled'
         const json = await response.json();
           remoteTxnHash.value = json.remoteTxnHash;
+          remoteNetwork.value = json.network;
+          remoteExplorerLink.value = remoteNetwork.value === 'BSC'?swapData.BSCScanUrl:swapData.ETHScanUrl;
           if(json.siriusTxnHash){
             siriusTransactionHash.value = json.siriusTxnHash;
             try{
@@ -199,7 +201,7 @@ export default {
                 }
               }
             }catch(err){
-              txnStatus.value = 'Sirius Transaction FAILED';
+              txnStatus.value = 'Sirius Transaction NOT FOUND. Please try to check again within 30 seconds if it is a new swap.';
               statusNotificationClassStyle.value = 'error_box error';
             }
           }else{
@@ -218,7 +220,7 @@ export default {
         }
       }catch(err){
         console.log(err)
-        customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
+        customErrorMessage.value = 'Failed to check transaction. Please try again later.';
         isLoaded.value = false;
       }
     };
@@ -242,6 +244,7 @@ export default {
       time,
       isSuccess,
       isLoaded,
+      remoteNetwork
     }
   }
 }
