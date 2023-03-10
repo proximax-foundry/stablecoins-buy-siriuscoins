@@ -68,6 +68,7 @@ app.component('Sidebar', Sidebar);
 app.component('Tree',Tree);
 
 AppStateUtils.addNewReadyStates('chainProfile');
+AppStateUtils.addNewReadyStates('chainSwapProfile');
 
 const chainProfileIntegration = async () => {
   try {
@@ -226,6 +227,7 @@ const chainSwapIntegration = async () => {
   } catch (e) {
     console.error(e);
   }
+  AppStateUtils.setStateReady('chainSwapProfile');
 };
 
 chainProfileIntegration();

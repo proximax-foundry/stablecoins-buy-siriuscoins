@@ -116,8 +116,23 @@ export default {
     const route = useRoute();
     const qpRecipient = route.query["recipient"] || route.query["address"] || "";
 
-    let swapData = new ChainSwapConfig(networkState.chainNetworkName);
-    swapData.init();
+    let swapData;
+
+    const init = async() =>{
+      swapData= new ChainSwapConfig(networkState.chainNetworkName);
+      swapData.init();
+    }
+    
+    if(AppState.isReady){
+      init();
+    }else{
+      let readyWatcher = watch(AppState, (value) => {
+        if(value.isReady){
+          init();
+          readyWatcher();
+        }
+      });
+    }
 
     const processing = ref(false);
     const submitFailed = ref(false);

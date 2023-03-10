@@ -97,8 +97,23 @@ export default {
     const isLoaded = shallowRef(false);
     const statusNotificationClassStyle = ref('');
 
-    let swapData = new ChainSwapConfig(networkState.chainNetworkName);
-    swapData.init();
+    let swapData;
+
+    const init = async() =>{
+      swapData= new ChainSwapConfig(networkState.chainNetworkName);
+      swapData.init();
+    }
+    
+    if(AppState.isReady){
+      init();
+    }else{
+      let readyWatcher = watch(AppState, (value) => {
+        if(value.isReady){
+          init();
+          readyWatcher();
+        }
+      });
+    }
 
     const customErrorMessage = ref('');
     const transactionHash = ref('');
