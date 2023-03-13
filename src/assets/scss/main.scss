@@ -75,8 +75,18 @@ body{
   font-weight: bold;
 }
 
+.pending{
+  @apply text-yellow-600;
+  font-size: 13px;
+  font-weight: bold;
+}
+
 .success_box{
   @apply bg-green-100 py-2 rounded-md px-2 my-3 ;
+}
+
+.pending_box{
+  @apply bg-yellow-100 py-2 rounded-md px-2 my-3 ;
 }
 
 .red-btn{
