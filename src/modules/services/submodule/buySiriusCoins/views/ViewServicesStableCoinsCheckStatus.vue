@@ -15,8 +15,12 @@
                 <div class="font-semibold text-left"><a :href="explorerLink() + siriusTransactionHash" target=_blank class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
               <div class="md:flex my-3 md:my-1">
-                <div class="md:w-56 text-left md:text-right mr-4">Status</div>
-                <div class="font-semibold text-left">{{ txnStatus }}</div>
+                <div class="md:w-56 text-left md:text-right mr-4">{{ remoteNetwork }} Status</div>
+                <div class="font-semibold text-left">{{ remoteTxnStatus }}</div>
+              </div>
+              <div class="md:flex my-3 md:my-1" if="siriusTxnStatus">
+                <div class="md:w-56 text-left md:text-right mr-4">Sirius Status</div>
+                <div class="font-semibold text-left">{{ siriusTxnStatus }}</div>
               </div>
               <div class="md:flex my-3 md:my-1">
                 <div class="md:w-56 text-left md:text-right mr-4">Sirius Recipient Address</div>
@@ -151,6 +155,8 @@ export default {
     const siriusTransactionHash = ref('');
     const remoteTxnHash = ref('');
     const txnStatus = ref('');
+    const remoteTxnStatus = ref('');
+    const siriusTxnStatus = ref('');
     const time = ref('');
     const explorerLink = () =>{
       if(!networkState.currentNetworkProfile){
@@ -159,7 +165,7 @@ export default {
       return networkState.currentNetworkProfile.chainExplorer.url + '/' + networkState.currentNetworkProfile.chainExplorer.hashRoute + '/';
     }
     const remoteExplorerLink = ref('');
-    
+
     const checkStatus = async() => {
       isLoaded.value = true;
       isSuccess.value = false;
@@ -186,27 +192,40 @@ export default {
           remoteExplorerLink.value = remoteNetwork.value === 'BSC'?swapData.BSCScanUrl:swapData.ETHScanUrl;
           if(json.siriusTxnHash){
             siriusTransactionHash.value = json.siriusTxnHash;
+            remoteTxnStatus.value = 'SUCCESS';
             try{
               if(AppState.isReady){
                 let siriusTxn = await AppState.chainAPI.transactionAPI.getTransactionStatus(json.siriusTxnHash);
                 if(siriusTxn.group == 'partial' || siriusTxn.group == 'unconfirmed'){
-                  txnStatus.value = 'PENDING';
+                  siriusTxnStatus.value = 'PENDING';
                   statusNotificationClassStyle.value = 'pending_box pending';
                 }else if(siriusTxn.group == 'confirmed'){
-                  txnStatus.value = 'SUCCESS';
+                  siriusTxnStatus.value = 'SUCCESS';
                   statusNotificationClassStyle.value = 'success_box success';
                 }else{
-                  txnStatus.value = 'Sirius Transaction FAILED';
+                  siriusTxnStatus.value = 'FAILED';
                   statusNotificationClassStyle.value = 'error_box error';
                 }
               }
             }catch(err){
-              txnStatus.value = 'Sirius Transaction NOT FOUND. Please check again within 30 seconds if it is a new swap.';
+              siriusTxnStatus.value = 'Sirius Transaction NOT FOUND. Please check again within 30 seconds if it is a new swap.';
               statusNotificationClassStyle.value = 'error_box error';
             }
           }else{
-            txnStatus.value = 'PENDING';
-            statusNotificationClassStyle.value = 'pending_box pending';
+            if(json.status == 'pending'){
+              remoteTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }else if(json.status == 'pending_confirmations' || json.status == 'pending_wallet'){
+              remoteTxnStatus.value = 'PENDING - ' + json.status;
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }else if(json.status == 'invalid' || json.status == 'cut_off_passed' || json.status == 'nothing_to_send'){
+              remoteTxnStatus.value = 'ERROR - ' + json.status;
+              statusNotificationClassStyle.value = 'error_box error';
+            }else if(json.status == 'complete'){
+              remoteTxnStatus.value = 'SUCCESS';
+              siriusTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }
           }
           siriusAddress.value = Helper.createAddress(json.siriusAddress).pretty();
           amount.value = Helper.convertToCurrency(json.receiveAmount, 0) + ' ' + json.toToken;
@@ -225,7 +244,6 @@ export default {
       }
     };
 
-    
 
     return {
       statusNotificationClassStyle,
@@ -240,7 +258,8 @@ export default {
       customErrorMessage,
       siriusAddress,
       checkStatus,
-      txnStatus,
+      remoteTxnStatus,
+      siriusTxnStatus,
       time,
       isSuccess,
       isLoaded,
