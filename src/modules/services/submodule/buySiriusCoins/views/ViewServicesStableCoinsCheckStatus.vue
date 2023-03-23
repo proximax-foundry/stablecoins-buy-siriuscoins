@@ -212,13 +212,24 @@ export default {
               statusNotificationClassStyle.value = 'error_box error';
             }
           }else{
-            if(json.status == 'pending_confirmations'){
+            if(json.status == 'pending_confirmations' || json.status == 'pending'){
               remoteTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }else if(json.status == 'initialized' || json.status == 'recheck' || json.status == 'pending_wallet'){
+              remoteTxnStatus.value = 'PENDING - ' + json.status;
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }else if(json.status == 'invalid' || json.status == 'cut_off_passed' || json.status == 'nothing_to_send'){
+              remoteTxnStatus.value = 'ERROR - ' + json.status;
+              statusNotificationClassStyle.value = 'error_box error';
+            }else if(json.status == 'complete'){
+              remoteTxnStatus.value = 'SUCCESS';
+              siriusTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
             }else{
               remoteTxnStatus.value = 'SUCCESS';
               siriusTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
             }
-            statusNotificationClassStyle.value = 'pending_box pending';
           }
           siriusAddress.value = Helper.createAddress(json.siriusAddress).pretty();
           amount.value = Helper.convertToCurrency(json.receiveAmount, 0) + ' ' + json.toToken;
