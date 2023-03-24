@@ -2,7 +2,7 @@
   <div>
     <div class='lg:w-9/12 ml-2 mr-2 lg:ml-auto lg:mr-auto mt-5 bg-white border border-white rounded-md shadow-lg'>
       <div class='mt-6 px-6 py-10 filter text-center'>
-        <div class="text-md mb-3">Buy {{ selectedToToken }}</div>
+        <div class="text-md mb-3">Sirius Crosschain Swap</div>
         <div>
           <div v-if="!isChainIdValid && isWalletConnected" class="error_box error error-text">
             <div>Please select supported chain, ethereum {{  remoteNetworkType }}/ bsc {{  remoteNetworkType }}</div>
