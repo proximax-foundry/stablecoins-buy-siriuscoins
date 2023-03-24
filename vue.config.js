@@ -36,7 +36,7 @@ module.exports = {
       config
           .plugin('html')
           .tap(args => {
-              args[0].title = "Sirius Stablecoins Swap";
+              args[0].title = "Sirius Crosschain Swap";
               return args;
           })
     }
