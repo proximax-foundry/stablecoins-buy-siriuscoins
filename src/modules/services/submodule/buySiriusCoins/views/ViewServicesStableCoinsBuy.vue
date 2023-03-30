@@ -10,8 +10,17 @@
           <div v-if="!isSupportedChainId && isWalletConnected" class="error_box error error-text">
             <div>Chain unsupported, please change to supported chain</div>
           </div>
-          <div class="flex justify-center mt-10 error_box error error-text" v-if="tokenInvalid">
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="minimumAmountNotMean && toInputAmount">
+            Minimum exchange amount: {{ minAmount }} {{ selectedToToken }}
+          </div>
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="tokenInvalid && isWalletConnected">
             Unsupported token
+          </div>
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="siriusTokenInvalid">
+            Unsupported Sirius token
+          </div>
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="feeInvalid">
+            Price calculation error 
           </div>
           <div class="flex justify-center mt-10 error_box error error-text" v-if="!settingDone && isLoaded">
             Configuration error
@@ -127,9 +136,10 @@ export default {
     const fromAmount = ref(12345.87);
     const fromInputAmount = ref(0);
     const toInputAmount = ref(0);
-    const recipient = ref(qpRecipient);
     const isSubmit = shallowRef(false);
     const tokenInvalid = ref(false);
+    const siriusTokenInvalid = ref(false);
+    const feeInvalid = ref(false);
 
     const transactionHash = ref('');
     const explorerLink = ref('');
@@ -138,7 +148,17 @@ export default {
     let provider;
 
     const disabledBuy = computed(() => {
-      return tokenInvalid.value || !settingDone.value || !isChainIdValid.value || !isSupportedChainId.value || fromInputAmount.value < 1 || showAddressError.value || !isChecked.value || isSubmit.value
+      return tokenInvalid.value
+        || siriusTokenInvalid.value 
+        || !settingDone.value 
+        || !isChainIdValid.value 
+        || !isSupportedChainId.value 
+        || fromInputAmount.value < 1 
+        || showAddressError.value 
+        || !isChecked.value 
+        || isSubmit.value
+        || feeInvalid.value
+        || minimumAmountNotMean.value
     });
 
     const customErrorMessage = ref("");
@@ -155,25 +175,74 @@ export default {
     const priceUpdated = ref(false);
     const settingDone = ref(false);
     const isLoaded = ref(false);
+
+    const BASE_BYTE_SIZE = 337;
+    let FEE_PER_BYTE = 0;
+    let ADDITIONAL_COSIGNERS = 0;
+    let FEE_MULTIPLIER = 0;
+    let NATIVE_FEE_TOKEN_NAME = "";
+
     const selectedFromTokenPrice = computed(()=>{
       priceUpdated.value; // just to trigger auto recompute
-      return stableCoins.find(x => x.name === selectedFromToken.value).price;
+
+      let token = stableCoins.find(x => x.name === selectedFromToken.value); 
+
+      return token && token.priceUpdated ? token.price: 0;
     });
 
     const selectedToTokenPrice = computed(()=>{
       priceUpdated.value; // just to trigger auto recompute
-      return siriusTokens.value.find(x => x.name === selectedToToken.value).price;
+
+      let token = siriusTokens.value.find(x => x.name === selectedToToken.value); 
+
+      return token && token.priceUpdated ? token.price: 0;
+    });
+
+    const selectedToTokenDecimals = computed(()=>{
+      let token = siriusTokens.value.find(x => x.name.toLowerCase() === selectedToToken.value.toLowerCase());
+
+      return token ? token.divisibility : 0;
+    });
+
+    const nativeFee = computed(()=>{
+      settingDone.value;
+      return Helper.safeMultiply(BASE_BYTE_SIZE + (ADDITIONAL_COSIGNERS * 96) + exchangeRate.value.toString().length, FEE_PER_BYTE);
+    });
+
+    const minAmount = computed(()=>{
+      return Helper.safeMultiplyCeilDecimals(fee.value, 1.2, selectedToTokenDecimals.value);
+    });
+
+    const nativeTokenPrice = computed(()=>{
+      if(!settingDone.value || !priceUpdated.value){
+        return 0;
+      }
+      
+      let token = siriusTokens.value.find(x => x.name.toLowerCase() === NATIVE_FEE_TOKEN_NAME.toLowerCase());
+      
+      return token && token.priceUpdated ? token.price : 0;
     });
 
     const fee = computed(()=>{
-      settingDone.value; // just to trigger auto recompute
-      return siriusTokens.value.find(x => x.name === selectedToToken.value).fee;
+
+      if(!settingDone.value){
+        return 0;
+      }
+
+      let feeAmount = FEE_MULTIPLIER ?
+          Helper.safeMultiply(nativeFee.value, FEE_MULTIPLIER) : nativeFee.value;
+
+      if(selectedToToken.value.toLowerCase() !== NATIVE_FEE_TOKEN_NAME.toLowerCase()){
+
+        let totalFeeInUSD = Helper.safeMultiply(nativeTokenPrice.value, nativeFee.value);
+        feeAmount = Helper.safeDivideCeilDecimals(totalFeeInUSD, selectedToTokenPrice.value, selectedToTokenDecimals.value);
+      }
+
+      return feeAmount;
     });
 
-    let siriusTokenAtomicUnits = 1000000;
-
     const exchangeRate = computed(()=>{
-      return Math.trunc((selectedFromTokenPrice.value/ selectedToTokenPrice.value) * siriusTokenAtomicUnits) / siriusTokenAtomicUnits;
+      return Helper.safeDivideFloorDecimals(selectedFromTokenPrice.value, selectedToTokenPrice.value, selectedToTokenDecimals.value);
     });
 
     const selectFromToken = (token) => {
@@ -324,6 +393,23 @@ export default {
       })
     }
 
+    const checkSelectedToTokenSupported = ()=>{
+      let siriusToken = siriusTokens.value.find(x => x.name.toLowerCase() === selectedToToken.value.toLowerCase());
+
+      if(siriusToken){
+
+        if(siriusToken.disabled){
+          siriusTokenInvalid.value = true;
+        }
+        else{
+          siriusTokenInvalid.value = false;
+        }
+      }
+      else{
+        siriusTokenInvalid.value = true;
+      }
+    }
+
     const checkSelectedTokenSupported = ()=>{
       if(selectedChainId.value === ethereumChainId.value){
         tokenInvalid.value = ethStableCoins.find(x => x.name === selectedFromToken.value).disabled;
@@ -332,6 +418,7 @@ export default {
         tokenInvalid.value = bscStableCoins.find(x => x.name === selectedFromToken.value).disabled;
       }
       else{
+        
         tokenInvalid.value = true;
       }
     }
@@ -356,14 +443,19 @@ export default {
           ethDisabled.value = false;
         }
 
+        FEE_PER_BYTE = serviceInfo.data.feeInfo.feePerByte;
+        ADDITIONAL_COSIGNERS = serviceInfo.data.feeInfo.cosigners;
+        FEE_MULTIPLIER = serviceInfo.data.feeInfo.multiplier ? serviceInfo.data.feeInfo.multiplier : 0;
+        NATIVE_FEE_TOKEN_NAME = serviceInfo.data.feeInfo.tokenName;
+
         const siriusTokensInfo = serviceInfo.data.siriusToken;
 
-        for(let siriusToken of siriusTokensInfo){
+        for(let siriusToken of siriusTokens.value){
 
-          let currentSiriusToken = siriusTokens.value.find(x => x.name == siriusToken.name.toUpperCase()); 
+          let currentSiriusToken = siriusTokensInfo.find(x => x.name.toUpperCase() == siriusToken.name.toUpperCase()); 
 
-          if(currentSiriusToken){
-            currentSiriusToken.fee = siriusToken.feeAmount;
+          if(!currentSiriusToken){
+            siriusToken.disabled = true;
           }
         }
 
@@ -404,6 +496,7 @@ export default {
         settingDone.value = true;
       }
       catch(error){
+        console.log(error);
         isLoaded.value = true;
         settingDone.value = false;
       }
@@ -414,14 +507,24 @@ export default {
       let prices = await getCurrentPriceUSD(SwapUtils.checkSwapPrice(swapData.priceConsultURL));
 
       for(let siriusToken of siriusTokens.value){
+
         if(prices[siriusToken.name.toLowerCase()]){
           siriusToken.price = prices[siriusToken.name.toLowerCase()];
+          siriusToken.priceUpdated = true;
+        }
+        else{
+          siriusToken.priceUpdated = false;
         }
       }
 
       for(let stableCoin of stableCoins){
+
         if(prices[stableCoin.name.toLowerCase()]){
           stableCoin.price = prices[stableCoin.name.toLowerCase()];
+          stableCoin.priceUpdated = true;
+        }
+        else{
+          stableCoin.priceUpdated = false;
         }
       }
 
@@ -578,6 +681,7 @@ export default {
     const buySiriusToken = async ()=>{
 
       customErrorMessage.value = "";
+      checkRecipient();
 
       try {
         isSubmit.value = true;
@@ -709,6 +813,7 @@ export default {
     const showAddressError = shallowRef(true);
     const toggleContact = shallowRef(false);
     const siriusAddress = ref(qpRecipient);
+    const minimumAmountNotMean = ref(false);
 
     const checkRecipient = () =>{
       try {
@@ -729,12 +834,18 @@ export default {
 
     // watcher section
     watch([fromInputAmount, exchangeRate], (newValue)=>{
-      toInputAmount.value = newValue[0] * newValue[1];
+      toInputAmount.value = Helper.safeMultiplyFloorDecimals(newValue[0], newValue[1], selectedToTokenDecimals.value);
+
+      minimumAmountNotMean.value = toInputAmount.value < minAmount.value ? true : false;
     });
 
     watch(selectedFromToken, (newValue)=>{
       updateSelectedContractAddress();
       checkSelectedTokenSupported();
+    });
+
+    watch(selectedToToken, (newValue)=>{
+      checkSelectedToTokenSupported();
     });
 
     watch([selectedChainId, connectedAddress], (newChainId)=>{
@@ -749,6 +860,19 @@ export default {
       }
     })
 
+    watch(fee, (newFee)=>{
+      
+      if(!priceUpdated.value){
+        feeInvalid.value = false;
+      }
+      else if(nativeTokenPrice.value && selectedToTokenPrice.value && selectedFromTokenPrice.value){
+        feeInvalid.value = false;
+      }
+      else{
+        feeInvalid.value = true;
+      }
+    });
+
     const isChecked = ref(false);
 
     const saveCertificate = () => {
@@ -757,6 +881,7 @@ export default {
     };
 
     let swapData;
+    // const initDone = ref(false);
 
     const init = async() =>{
       swapData= new ChainSwapConfig(networkState.chainNetworkName);
@@ -766,6 +891,7 @@ export default {
       explorerLink.value = selectedChainId.value === bscChainId.value ? swapData.BSCScanUrl : swapData.ETHScanUrl;
       getCurrentPrice();
       fetchServiceInfo();
+      // initDone.value = true;
     }
     
     if(AppState.isReady){
@@ -817,6 +943,7 @@ export default {
       remoteNetworkType,
       settingDone,
       tokenInvalid,
+      siriusTokenInvalid,
       processing,
       submitFailed,
       fee,
@@ -825,6 +952,10 @@ export default {
       explorerLink,
       transactionHash,
       saveCertificate,
+      nativeTokenPrice,
+      feeInvalid,
+      minimumAmountNotMean,
+      minAmount
     }
   }
 }
