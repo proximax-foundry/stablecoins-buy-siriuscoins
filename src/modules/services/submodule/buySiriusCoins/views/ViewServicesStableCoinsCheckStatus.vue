@@ -175,7 +175,11 @@ export default {
         let url = '';
         if(hashType.value == 'BSC'){
           url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'bsc', transactionHash.value);
-        }else{
+        }
+        else if(hashType.value == 'ETH'){
+          url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'eth', transactionHash.value);
+        }
+        else{
           url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckStatus_URL(swapData.swap_IN_SERVICE_URL, transactionHash.value);
         }
         const response = await fetch(url, {
