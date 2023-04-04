@@ -10,7 +10,7 @@
           <div v-if="!isSupportedChainId && isWalletConnected" class="error_box error error-text">
             <div>Chain unsupported, please change to supported chain</div>
           </div>
-          <div class="flex justify-center mt-10 error_box error error-text" v-if="minimumAmountNotMean && toInputAmount">
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="minimumAmountNotMeet && toInputAmount">
             Minimum exchange amount: {{ minAmount }} {{ selectedToToken }}
           </div>
           <div class="flex justify-center mt-10 error_box error error-text" v-if="tokenInvalid && isWalletConnected">
@@ -50,8 +50,23 @@
             <button @click="manualDisconnect" class="ml-2 text-gray-500 flex items-center group hover:text-gray-900 border border-gray-500 p-1 rounded-md bg-gray-50">Disconnect <font-awesome-icon icon="times" class="text-gray-500 ml-1 group-hover:text-gray-900" /></button>
           </div>
           <div v-else class="text-xs flex items-center justify-end text-gray-500 hover:text-gray-900 group duration-200 transition-all"><button @click="connectWallet" class="border border-gray-500 p-1 rounded-md bg-gray-50 hover:bg-gray-200 transition-all duration-200">Connect Wallet <font-awesome-icon icon="wallet" class="text-gray-500 ml-2 group-hover:text-gray-900" /></button></div>
+          <div v-if="!submitMode">Missed a swap submission ? You can continue by clicking <a @click="submitMode = !submitMode"  >here</a></div>
           <div>
-            <BuyFormInput ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
+            <div class="block text-left" v-if="submitMode">
+              <div class="text-xs mb-2">Transaction Hash: <button class="blue-btn py-2 px-2 cursor-pointer text-center" @click="checkRemoteTxn">Check Remote Transaction</button></div>
+              <div class="w-full mt-5">
+                <div class="border border-gray-200 px-2 py-2 rounded-md">
+                  <div class="flex gap-2">
+                    <div class="flex flex-col w-full">
+                      <div class="uppercase text-gray-500 font-light text-txs text-left mb-1.5">{{ remoteNetworkName }} {{ remoteNetworkType }} Transaction Hash</div>
+                      <input type="text" v-model="transactionHash" @input="checkTxnValid = false"  class="w-full font-semibold text-tsm outline-none ">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <BuyFormInput v-if="!submitMode" ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
             <BuyFormInputFlex ref="buyToComponent" formLabel="To" :tokens="siriusTokens" v-model="toInputAmount" :selectedToken="selectedToToken" :amount="toAmount" @confirmedSelectToken="selectToToken" :disabled="true" class="mt-5" />
           </div>
           <div class="flex mt-4">
@@ -120,6 +135,7 @@ export default {
     toggleSwitch,
   },
   setup(){
+    const submitMode = ref(false);
 
     const {t} = useI18n();
     const route = useRoute();
@@ -143,11 +159,29 @@ export default {
 
     const transactionHash = ref('');
     const explorerLink = ref('');
+
+    const checkTxnValid = ref(false);
     
     const isChainIdValid = ref(false);
     let provider;
 
     const disabledBuy = computed(() => {
+
+      if(submitMode.value){
+        return siriusTokenInvalid.value 
+          || !settingDone.value 
+          || !isChainIdValid.value 
+          || !isSupportedChainId.value 
+          || showAddressError.value 
+          || !isChecked.value 
+          || fromInputAmount.value == 0 
+          || toInputAmount.value <= 0
+          || isSubmit.value
+          || feeInvalid.value
+          || transactionHash.value.trim() == ""
+          || !checkTxnValid.value
+      }
+
       return tokenInvalid.value
         || siriusTokenInvalid.value 
         || !settingDone.value 
@@ -158,7 +192,7 @@ export default {
         || !isChecked.value 
         || isSubmit.value
         || feeInvalid.value
-        || minimumAmountNotMean.value
+        || minimumAmountNotMeet.value
     });
 
     const customErrorMessage = ref("");
@@ -268,13 +302,25 @@ export default {
     }
 
     const updateBuyFromTokenBalance = ()=>{
-      buyFromComponent.value.updateSeletectedTokenBalance(selectedFromToken.value);
+      if(!submitMode.value){
+        buyFromComponent.value.updateSeletectedTokenBalance(selectedFromToken.value);
+      } 
     }
 
     // connect wallet section
     const ethereumChainId = ref(0);
     const bscChainId = ref(0);
     const remoteNetworkType = computed(()=> ethereumChainId.value === 1 ? "mainnet": "testnet");
+    const remoteNetworkName = computed(()=>{
+      if(selectedChainId.value === ethereumChainId.value){
+        return "ETH"
+      }else if(selectedChainId.value === bscChainId.value){
+        return "BSC";
+      }
+      else{
+        return "BSC / ETH";
+      }
+    });
     const selectedChainId = ref(0);
     const isWalletConnected = ref(false);
     const connectedWalletName = ref("");
@@ -577,7 +623,7 @@ export default {
     };
 
     const handleConnect = (connectData)=>{
-      // MetaMask call after change to external chain 
+      // MetaMask call after change to external chain
       handleChainChanged(connectData.chainId);
     }
 
@@ -678,10 +724,180 @@ export default {
     checkWalletConnected();
 
     const swapTimestamp = ref('');
+
+    const checkRemoteTxn = async() =>{
+
+      customErrorMessage.value = "";
+      checkTxnValid.value = false; 
+      try {
+        transactionHash.value = transactionHash.value.trim();
+
+        if(transactionHash.value === ""){
+          customErrorMessage.value = "Please fill in transaction hash";
+          return;
+        }
+        
+        if(!provider){
+          customErrorMessage.value = "Please connect wallet";
+          return;
+        }
+
+        let url = '';
+        if(remoteNetworkName.value == 'BSC'){
+          url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'bsc', transactionHash.value);
+        }
+        else if(remoteNetworkName.value == 'ETH'){
+          url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'eth', transactionHash.value);
+        }
+        else{
+          customErrorMessage.value = "Please select supported network at wallet";
+          return;
+        }
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if(response.status == 200){
+          customErrorMessage.value = "Submission found. Please proceed to check status page.";
+          return;
+        }
+
+        const web3Provider = new ethers.providers.Web3Provider(provider);
+
+        let transactionReceipt = await web3Provider.getTransactionReceipt(transactionHash.value);
+
+        if(transactionReceipt && selectedChainId.value === bscChainId.value){
+
+          const bscCoin = bscStableCoins.find(x => x.contractAddress.toLowerCase() == transactionReceipt.to.toLowerCase()); 
+
+          if(bscCoin && !bscCoin.disabled){
+            selectedFromToken.value = bscCoin.name;
+            fromInputAmount.value = Helper.safeDivide(Helper.bigNumberFromString(transactionReceipt.logs[0].data), Math.pow(10, bscCoin.decimals));
+            selectedContractAddress.value = bscCoin.contractAddress;
+          }
+          else{
+            customErrorMessage.value = "Invalid BSC token";
+            return false;
+          }
+        }
+        else if(transactionReceipt && selectedChainId.value === ethereumChainId.value){
+          const ethCoin = ethStableCoins.find(x => x.contractAddress.toLowerCase() == transactionReceipt.to.toLowerCase()); 
+
+          if(ethCoin && !ethCoin.disabled){
+            selectedFromToken.value = ethCoin.name;
+            fromInputAmount.value = Helper.safeDivide(Helper.bigNumberFromString(transactionReceipt.logs[0].data), Math.pow(10, ethCoin.decimals));
+            selectedContractAddress.value = ethCoin.contractAddress;
+          }
+          else{
+            customErrorMessage.value = "Invalid ETH token";
+            return false;
+          }
+        }
+        else{
+          customErrorMessage.value = "Remote transaction not found/ invalid";
+          return false;
+        }
+
+        let transactionStatus = await web3Provider.getTransaction(transactionHash.value);
+        
+        if(transactionReceipt && transactionReceipt.status === 1){ // when transaciton is confirmed but status is 1
+
+            if(transactionStatus.to.toLowerCase() !== selectedContractAddress.value.toLowerCase() 
+              || transactionReceipt.logs.length !== 1 || 
+              transactionReceipt.logs[0].topics[0] !== "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+              || transactionReceipt.logs[0].topics[2] !== "0x" + "0".repeat(66 - selectedRemoteSinkAddress.value.length) + selectedRemoteSinkAddress.value.substring(2).toLowerCase()){
+                customErrorMessage.value = "Remote transaction invalid";
+                return false;
+            }
+          
+        }else if(transactionReceipt && transactionReceipt.status === 0){ // transaction is confirmed but status is 0 - fee too low
+          customErrorMessage.value = "Remote transaction failed";
+          return false;
+        }else if(!transactionReceipt && !transactionStatus){ // transaction hash is not found
+          customErrorMessage.value = "Remote transaction not found";
+          return false;
+        }else{
+          customErrorMessage.value = "Remote transaction unknown status";
+          return false;
+        }
+        
+      }catch(error){
+        console.log(error);
+        customErrorMessage.value = "Transaction checking failed";
+      }
+
+      checkTxnValid.value = true; 
+    }
+
+    const doResubmission = async()=>{
+      try {
+        isSubmit.value = true;
+        const web3Provider = new ethers.providers.Web3Provider(provider);
+        const signer = web3Provider.getSigner();
+        const address = await signer.getAddress();
+
+        let signedMessageSignature;
+
+        if (provider.wc) {
+          signedMessageSignature = await provider.send(
+              'personal_sign',
+              [ ethers.utils.hexlify(ethers.utils.toUtf8Bytes(siriusAddress.value)), address.toLowerCase() ]
+          );
+        }
+        else { 
+          signedMessageSignature = await signer.signMessage(siriusAddress.value);
+        }
+
+        let txnHash = transactionHash.value;
+
+        const data = {
+          fromToken: selectedFromToken.value,
+          toToken: selectedToToken.value,
+          recipient: siriusAddress.value,
+          signature: signedMessageSignature,
+          txnInfo: {
+            txnHash: txnHash,
+            network: selectedChainId.value === bscChainId.value ? "BSC" : "ETH"
+          }
+        };
+
+        const response = await fetch(SwapUtils.getIncoming_SwapTransfer_URL(swapData.swap_IN_SERVICE_URL), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+
+        if(response.status == 200 || response.status == 201 || response.status == 202){
+          const serverResponseData = await response.json();
+
+          console.log(serverResponseData);
+          swapTimestamp.value = Helper.IsoTimeRemoveFormat(serverResponseData.timestamp);
+
+          processing.value = true;
+        }
+        else{
+          submitFailed.value = true;
+        }
+        
+      }catch(error){
+        isSubmit.value = false;
+      }
+    }
+
     const buySiriusToken = async ()=>{
 
       customErrorMessage.value = "";
       checkRecipient();
+
+      if(submitMode.value){
+        doResubmission();
+        return;
+      }
 
       try {
         isSubmit.value = true;
@@ -813,7 +1029,7 @@ export default {
     const showAddressError = shallowRef(true);
     const toggleContact = shallowRef(false);
     const siriusAddress = ref(qpRecipient);
-    const minimumAmountNotMean = ref(false);
+    const minimumAmountNotMeet = ref(false);
 
     const checkRecipient = () =>{
       try {
@@ -836,7 +1052,7 @@ export default {
     watch([fromInputAmount, exchangeRate], (newValue)=>{
       toInputAmount.value = Helper.safeMultiplyFloorDecimals(newValue[0], newValue[1], selectedToTokenDecimals.value);
 
-      minimumAmountNotMean.value = toInputAmount.value < minAmount.value ? true : false;
+      minimumAmountNotMeet.value = toInputAmount.value < minAmount.value ? true : false;
     });
 
     watch(selectedFromToken, (newValue)=>{
@@ -941,6 +1157,7 @@ export default {
       isSubmit,
       isSupportedChainId,
       remoteNetworkType,
+      remoteNetworkName,
       settingDone,
       tokenInvalid,
       siriusTokenInvalid,
@@ -954,8 +1171,11 @@ export default {
       saveCertificate,
       nativeTokenPrice,
       feeInvalid,
-      minimumAmountNotMean,
-      minAmount
+      minimumAmountNotMeet,
+      minAmount,
+      submitMode,
+      checkRemoteTxn,
+      checkTxnValid
     }
   }
 }

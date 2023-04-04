@@ -320,6 +320,10 @@ export class Helper {
     static bigNumber(value: number): math.BigNumber{
         return math.bignumber(value);
     }
+
+    static bigNumberFromString(value: string): math.BigNumber{
+        return math.bignumber(value);
+    }
 }
 
 export interface LooseObject {
