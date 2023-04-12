@@ -31,6 +31,9 @@
           <div class="flex justify-center mt-10 error_box error error-text" v-if="customErrorMessage">
             {{ customErrorMessage }}
           </div>
+          <div class="flex justify-center mt-10 success_box success success-text" v-if="isTxnSubmissionFound">
+            Submission found. Please proceed to <router-link :to="{ name: 'ViewServicesStableCoinsCheckStatus' }">check status page</router-link>
+          </div>
           <div class="mt-10 success_box success success-text" v-if="processing">
             <div class="mb-2">Congratulation! The swap process has already started!</div>
             <div class="font-normal relative mb-2"><b>Transaction hash: </b><a :href="explorerLink + transactionHash" target=_blank class="hover:underline">{{ transactionHash.substring(0, 7) + '...' + transactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
@@ -40,21 +43,25 @@
           <div class="flex justify-center mt-10 success_box success success-text" v-if="dispalyWaitForConfirmationMessage">
             <div style="border-top-color:transparent" class="inline-block mr-2 relative top-2 w-4 h-4 border-4 border-green-500 border-solid rounded-full animate-spin"></div> Please wait until transaction is confirmed
           </div>
-          <div v-if="isWalletConnected" class="text-xs flex items-center justify-end">
-            <div v-if="connectedWalletName === 'WC'" class="flex items-center gray-text-300">
-              <img src="@/modules/services/submodule/buySiriusCoins/img/icon-walletconnect.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
+          <div class="flex justify-between">
+            <div v-if="!submitMode" class="text-tsm mb-5 mt-5">Missed a swap submission ? <a @click="submitMode = !submitMode" class="hover:underline text-gray-500 hover:text-gray-800" >Retieve remote txn hash to continue</a></div>
+            <div v-else></div>
+            <div v-if="isWalletConnected" class="text-xs flex items-center justify-end">
+              <div v-if="connectedWalletName === 'WC'" class="flex items-center gray-text-300">
+                <img src="@/modules/services/submodule/buySiriusCoins/img/icon-walletconnect.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
+              </div>
+              <div v-else class="flex items-center gray-text-300">
+                <img src="@/modules/services/submodule/buySiriusCoins/img/icon-metamask-fox.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
+              </div>
+              <button @click="manualDisconnect" class="ml-2 text-gray-500 flex items-center group hover:text-gray-900 border border-gray-500 p-1 rounded-md bg-gray-50">Disconnect <font-awesome-icon icon="times" class="text-gray-500 ml-1 group-hover:text-gray-900" /></button>
             </div>
-            <div v-else class="flex items-center gray-text-300">
-              <img src="@/modules/services/submodule/buySiriusCoins/img/icon-metamask-fox.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
-            </div>
-            <button @click="manualDisconnect" class="ml-2 text-gray-500 flex items-center group hover:text-gray-900 border border-gray-500 p-1 rounded-md bg-gray-50">Disconnect <font-awesome-icon icon="times" class="text-gray-500 ml-1 group-hover:text-gray-900" /></button>
+            <div v-else class="text-xs flex items-center justify-end text-gray-500 hover:text-gray-900 group duration-200 transition-all"><button @click="connectWallet" class="border border-gray-500 p-1 rounded-md bg-gray-50 hover:bg-gray-200 transition-all duration-200">Connect Wallet <font-awesome-icon icon="wallet" class="text-gray-500 ml-2 group-hover:text-gray-900" /></button></div>
+            
           </div>
-          <div v-else class="text-xs flex items-center justify-end text-gray-500 hover:text-gray-900 group duration-200 transition-all"><button @click="connectWallet" class="border border-gray-500 p-1 rounded-md bg-gray-50 hover:bg-gray-200 transition-all duration-200">Connect Wallet <font-awesome-icon icon="wallet" class="text-gray-500 ml-2 group-hover:text-gray-900" /></button></div>
-          <div v-if="!submitMode">Missed a swap submission ? You can continue by clicking <a @click="submitMode = !submitMode"  >here</a></div>
           <div>
             <div class="block text-left" v-if="submitMode">
-              <div class="text-xs mb-2">Transaction Hash: <button class="blue-btn py-2 px-2 cursor-pointer text-center" @click="checkRemoteTxn">Check Remote Transaction</button></div>
-              <div class="w-full mt-5">
+              <div class="text-xs mb-2">Transaction Hash:</div>
+              <div class="w-full mt-2">
                 <div class="border border-gray-200 px-2 py-2 rounded-md">
                   <div class="flex gap-2">
                     <div class="flex flex-col w-full">
@@ -64,8 +71,10 @@
                   </div>
                 </div>
               </div>
+              <button v-if="!isTxnHashVerified" class="blue-btn py-2 px-2 cursor-pointer text-center mt-2 disabled:opacity-50" :disabled="isDisabledCheckStatus" @click="checkRemoteTxn">{{ isCheckingTxn?'Checking...':'Check Remote Transaction' }}</button>
+              <div v-else class="text-xs mt-2 p-2 rounded-md bg-green-100 text-green-700 inline-block">Transaction Hash is verified. Please insert <span class="font-semibold font-mono">TRANSFER TO ADDRESS</span> to continue.</div>
+              <div class="inline-block text-gray-500 text-xs ml-2" v-if="!selectedChainId">Please Connect Wallet to continue</div>
             </div>
-            
             <BuyFormInput v-if="!submitMode" ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
             <BuyFormInputFlex ref="buyToComponent" formLabel="To" :tokens="siriusTokens" v-model="toInputAmount" :selectedToken="selectedToToken" :amount="toAmount" @confirmedSelectToken="selectToToken" :disabled="true" class="mt-5" />
           </div>
@@ -195,6 +204,7 @@ export default {
         || minimumAmountNotMeet.value
     });
 
+    const isTxnSubmissionFound = ref(false);
     const customErrorMessage = ref("");
     const dispalyWaitForConfirmationMessage = ref(false);
     const selectedRemoteSinkAddress = ref("");
@@ -726,19 +736,22 @@ export default {
     const swapTimestamp = ref('');
 
     const checkRemoteTxn = async() =>{
-
+      isCheckingTxn.value = true;
       customErrorMessage.value = "";
+      isTxnSubmissionFound.value = false;
       checkTxnValid.value = false; 
       try {
         transactionHash.value = transactionHash.value.trim();
 
         if(transactionHash.value === ""){
           customErrorMessage.value = "Please fill in transaction hash";
+          isCheckingTxn.value = false;
           return;
         }
         
         if(!provider){
           customErrorMessage.value = "Please connect wallet";
+          isCheckingTxn.value = false;
           return;
         }
 
@@ -751,6 +764,7 @@ export default {
         }
         else{
           customErrorMessage.value = "Please select supported network at wallet";
+          isCheckingTxn.value = false;
           return;
         }
         const response = await fetch(url, {
@@ -761,7 +775,8 @@ export default {
         });
 
         if(response.status == 200){
-          customErrorMessage.value = "Submission found. Please proceed to check status page.";
+          isTxnSubmissionFound.value = true;
+          isCheckingTxn.value = false;
           return;
         }
 
@@ -777,9 +792,11 @@ export default {
             selectedFromToken.value = bscCoin.name;
             fromInputAmount.value = Helper.safeDivide(Helper.bigNumberFromString(transactionReceipt.logs[0].data), Math.pow(10, bscCoin.decimals));
             selectedContractAddress.value = bscCoin.contractAddress;
+            isTxnHashVerified.value = true;
           }
           else{
             customErrorMessage.value = "Invalid BSC token";
+            isCheckingTxn.value = false;
             return false;
           }
         }
@@ -790,9 +807,11 @@ export default {
             selectedFromToken.value = ethCoin.name;
             fromInputAmount.value = Helper.safeDivide(Helper.bigNumberFromString(transactionReceipt.logs[0].data), Math.pow(10, ethCoin.decimals));
             selectedContractAddress.value = ethCoin.contractAddress;
+            isTxnHashVerified.value = true;
           }
           else{
             customErrorMessage.value = "Invalid ETH token";
+            isCheckingTxn.value = false;
             return false;
           }
         }
@@ -829,7 +848,7 @@ export default {
         customErrorMessage.value = "Transaction checking failed";
       }
 
-      checkTxnValid.value = true; 
+      checkTxnValid.value = true;
     }
 
     const doResubmission = async()=>{
@@ -892,6 +911,7 @@ export default {
     const buySiriusToken = async ()=>{
 
       customErrorMessage.value = "";
+      isTxnSubmissionFound.value = false;
       checkRecipient();
 
       if(submitMode.value){
@@ -1121,7 +1141,31 @@ export default {
       });
     }
 
+    const isCheckingTxn = shallowRef(false);
+    const isTxnHashVerified = shallowRef(false);
+
+    const isDisabledCheckStatus = computed(() => {
+      if(isCheckingTxn.value){
+        return true;
+      }
+      if(selectedChainId.value === bscChainId.value){
+        // check for BSC txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2).toUpperCase() == '0X'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else{
+        return true;
+      }
+    });
+
     return {
+      isCheckingTxn,
+      isTxnHashVerified,
       isLoaded,
       stableCoins,
       siriusTokens,
@@ -1166,6 +1210,7 @@ export default {
       fee,
       dispalyWaitForConfirmationMessage,
       customErrorMessage,
+      isTxnSubmissionFound,
       explorerLink,
       transactionHash,
       saveCertificate,
@@ -1175,7 +1220,8 @@ export default {
       minAmount,
       submitMode,
       checkRemoteTxn,
-      checkTxnValid
+      checkTxnValid,
+      isDisabledCheckStatus,
     }
   }
 }
