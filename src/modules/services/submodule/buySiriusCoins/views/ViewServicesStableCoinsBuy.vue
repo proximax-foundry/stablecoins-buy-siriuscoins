@@ -74,6 +74,7 @@
               <button v-if="!isTxnHashVerified" class="blue-btn py-2 px-2 cursor-pointer text-center mt-2 disabled:opacity-50" :disabled="isDisabledCheckStatus" @click="checkRemoteTxn">{{ isCheckingTxn?'Checking...':'Check Remote Transaction' }}</button>
               <div v-else class="text-xs mt-2 p-2 rounded-md bg-green-100 text-green-700 inline-block">Transaction Hash is verified. Please insert <span class="font-semibold font-mono">TRANSFER TO ADDRESS</span> to continue.</div>
               <div class="inline-block text-gray-500 text-xs ml-2" v-if="!selectedChainId">Please Connect Wallet to continue</div>
+              <button @click="submitMode=!submitMode; transactionHash = ''; isTxnHashVerified = false; isCheckingTxn = false; fromInputAmount= 0;" class="bg-gray-100 border-gray-300 border duration-200 transition-all hover:bg-gray-200 text-gray-600 text-xs rounded-md ml-2 py-1.5 px-2 cursor-pointer text-center mt-2">Cancel</button>
             </div>
             <BuyFormInput v-if="!submitMode" ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
             <BuyFormInputFlex ref="buyToComponent" formLabel="To" :tokens="siriusTokens" v-model="toInputAmount" :selectedToken="selectedToToken" :amount="toAmount" @confirmedSelectToken="selectToToken" :disabled="true" class="mt-5" />
