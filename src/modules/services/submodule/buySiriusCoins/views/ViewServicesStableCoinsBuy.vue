@@ -32,7 +32,7 @@
             {{ customErrorMessage }}
           </div>
           <div class="flex justify-center mt-10 success_box success success-text" v-if="isTxnSubmissionFound">
-            Submission found. Please proceed to <router-link :to="{ name: 'ViewServicesStableCoinsCheckStatus' }">check status page</router-link>
+            Submission found. Please proceed to <router-link :to="{ name: 'ViewServicesStableCoinsCheckStatus' }" class="ml-1 hover:underline">check status page</router-link>
           </div>
           <div class="mt-10 success_box success success-text" v-if="processing">
             <div class="mb-2">Congratulation! The swap process has already started!</div>
@@ -73,7 +73,7 @@
               </div>
               <button v-if="!isTxnHashVerified" class="blue-btn py-2 px-2 cursor-pointer text-center mt-2 disabled:opacity-50" :disabled="isDisabledCheckStatus" @click="checkRemoteTxn">{{ isCheckingTxn?'Checking...':'Check Remote Transaction' }}</button>
               <div v-else class="text-xs mt-2 p-2 rounded-md bg-green-100 text-green-700 inline-block">Transaction Hash is verified. Please insert <span class="font-semibold font-mono">TRANSFER TO ADDRESS</span> to continue.</div>
-              <div class="inline-block text-gray-500 text-xs ml-2" v-if="!selectedChainId">Please Connect Wallet to continue</div>
+              <div class="inline-block text-red-500 text-xs ml-2" v-if="!selectedChainId">Please <b>Connect Wallet</b> to continue</div>
               <button @click="submitMode=!submitMode; transactionHash = ''; isTxnHashVerified = false; isCheckingTxn = false; fromInputAmount= 0;" class="bg-gray-100 border-gray-300 border duration-200 transition-all hover:bg-gray-200 text-gray-600 text-xs rounded-md ml-2 py-1.5 px-2 cursor-pointer text-center mt-2">Cancel</button>
             </div>
             <BuyFormInput v-if="!submitMode" ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
@@ -1152,7 +1152,17 @@ export default {
       if(selectedChainId.value === bscChainId.value){
         // check for BSC txn type
         if(transactionHash.value.length == 66){
-          if(transactionHash.value.substring(0, 2).toUpperCase() == '0X'){
+          if(transactionHash.value.substring(0, 2) === '0x'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else if(selectedChainId.value === ethereumChainId.value){
+        // check for ETH txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2) === '0x'){
             return false
           }
           return true;

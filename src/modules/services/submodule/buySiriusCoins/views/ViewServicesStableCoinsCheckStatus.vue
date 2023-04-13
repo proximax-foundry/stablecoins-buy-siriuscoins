@@ -48,6 +48,7 @@
             <div class="flex items-center cursor-pointer">
               <select class="cursor-pointer outline-none hover:bg-blue-50 p-2 pl-0 transition-all duration-200 rounded-lg" v-model="hashType">
                 <option value="BSC">BSC Transaction Hash</option>
+                <option value="ETH">ETH Transaction Hash</option>
                 <option value="Sirius">Sirius Transaction Hash</option>
               </select>
             </div>
@@ -131,7 +132,17 @@ export default {
       if(hashType.value == 'BSC'){
         // check for BSC txn type
         if(transactionHash.value.length == 66){
-          if(transactionHash.value.substring(0, 2).toUpperCase() == '0X'){
+          if(transactionHash.value.substring(0, 2) === '0x'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else if(hashType.value == 'ETH'){
+        // check for ETH txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2) === '0x'){
             return false
           }
           return true;
@@ -236,6 +247,10 @@ export default {
           let date = new Date(json.timeStamp);
           time.value = date.toLocaleTimeString();
           isSuccess.value = true;
+          isLoaded.value = false;
+        }
+        else if(response.status == 400){
+          customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
           isLoaded.value = false;
         }else if(response.status == 404){
           customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
