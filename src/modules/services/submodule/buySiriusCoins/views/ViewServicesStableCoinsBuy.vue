@@ -44,7 +44,7 @@
             <div style="border-top-color:transparent" class="inline-block mr-2 relative top-2 w-4 h-4 border-4 border-green-500 border-solid rounded-full animate-spin"></div> Please wait until transaction is confirmed
           </div>
           <div class="flex justify-between">
-            <div v-if="!submitMode" class="text-tsm mb-5 mt-5">Missed a swap submission ? <a @click="submitMode = !submitMode" class="hover:underline text-gray-500 hover:text-gray-800" >Retieve remote txn hash to continue</a></div>
+            <div v-if="!submitMode" class="text-tsm mb-5 mt-5">Missed a swap submission ? <a @click="submitMode = !submitMode" class="hover:underline text-gray-500 hover:text-gray-800" >Retrieve remote txn hash to continue</a></div>
             <div v-else></div>
             <div v-if="isWalletConnected" class="text-xs flex items-center justify-end">
               <div v-if="connectedWalletName === 'WC'" class="flex items-center gray-text-300">
