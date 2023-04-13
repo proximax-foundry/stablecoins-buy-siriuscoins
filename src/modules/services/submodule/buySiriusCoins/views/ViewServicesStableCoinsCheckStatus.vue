@@ -48,6 +48,7 @@
             <div class="flex items-center cursor-pointer">
               <select class="cursor-pointer outline-none hover:bg-blue-50 p-2 pl-0 transition-all duration-200 rounded-lg" v-model="hashType">
                 <option value="BSC">BSC Transaction Hash</option>
+                <option value="ETH">ETH Transaction Hash</option>
                 <option value="Sirius">Sirius Transaction Hash</option>
               </select>
             </div>
@@ -131,7 +132,17 @@ export default {
       if(hashType.value == 'BSC'){
         // check for BSC txn type
         if(transactionHash.value.length == 66){
-          if(transactionHash.value.substring(0, 2).toUpperCase() == '0X'){
+          if(transactionHash.value.substring(0, 2) === '0x'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else if(hashType.value == 'ETH'){
+        // check for ETH txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2) === '0x'){
             return false
           }
           return true;
@@ -237,6 +248,10 @@ export default {
           time.value = date.toLocaleTimeString();
           isSuccess.value = true;
           isLoaded.value = false;
+        }
+        else if(response.status == 400){
+          customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
+          isLoaded.value = false;
         }else if(response.status == 404){
           customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
           isLoaded.value = false;
@@ -274,10 +289,10 @@ export default {
 </script>
 <style scoped lang="scss">
 .slide-enter-active {
-  -moz-transition-duration: 1s;
-  -webkit-transition-duration: 1s;
-  -o-transition-duration: 1s;
-  transition-duration: 1s;
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  -o-transition-duration: 0.3s;
+  transition-duration: 0.3s;
   -moz-transition-timing-function: ease-in-out;
   -webkit-transition-timing-function: ease-in-out;
   -o-transition-timing-function: ease-in-out;
@@ -285,10 +300,10 @@ export default {
 }
 
 .slide-leave-active {
-  -moz-transition-duration: 1s;
-  -webkit-transition-duration: 1s;
-  -o-transition-duration: 1s;
-  transition-duration: 1s;
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  -o-transition-duration: 0.3s;
+  transition-duration: 0.3s;
   -moz-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
   -webkit-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
   -o-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
@@ -297,7 +312,7 @@ export default {
 
 .slide-enter-to,
 .slide-leave-from {
-  max-height: 1000px;
+  max-height: 500px;
   overflow: hidden;
 }
 
