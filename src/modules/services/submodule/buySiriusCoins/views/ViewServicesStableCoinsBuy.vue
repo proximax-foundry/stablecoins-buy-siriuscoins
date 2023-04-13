@@ -2,7 +2,7 @@
   <div>
     <div class='lg:w-9/12 ml-2 mr-2 lg:ml-auto lg:mr-auto mt-5 bg-white border border-white rounded-md shadow-lg'>
       <div class='mt-6 px-6 py-10 filter text-center'>
-        <div class="text-md mb-3">Buy {{ selectedToToken }}</div>
+        <div class="text-md mb-3">Sirius Crosschain Swap</div>
         <div>
           <div v-if="!isChainIdValid && isWalletConnected" class="error_box error error-text">
             <div>Please select supported chain, ethereum {{  remoteNetworkType }}/ bsc {{  remoteNetworkType }}</div>
@@ -10,8 +10,17 @@
           <div v-if="!isSupportedChainId && isWalletConnected" class="error_box error error-text">
             <div>Chain unsupported, please change to supported chain</div>
           </div>
-          <div class="flex justify-center mt-10 error_box error error-text" v-if="tokenInvalid">
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="minimumAmountNotMeet && toInputAmount">
+            Minimum exchange amount: {{ minAmount }} {{ selectedToToken }}
+          </div>
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="tokenInvalid && isWalletConnected">
             Unsupported token
+          </div>
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="siriusTokenInvalid">
+            Unsupported Sirius token
+          </div>
+          <div class="flex justify-center mt-10 error_box error error-text" v-if="feeInvalid">
+            Price calculation error 
           </div>
           <div class="flex justify-center mt-10 error_box error error-text" v-if="!settingDone && isLoaded">
             Configuration error
@@ -22,6 +31,9 @@
           <div class="flex justify-center mt-10 error_box error error-text" v-if="customErrorMessage">
             {{ customErrorMessage }}
           </div>
+          <div class="flex justify-center mt-10 success_box success success-text" v-if="isTxnSubmissionFound">
+            Submission found. Please proceed to <router-link :to="{ name: 'ViewServicesStableCoinsCheckStatus' }" class="ml-1 hover:underline">check status page</router-link>
+          </div>
           <div class="mt-10 success_box success success-text" v-if="processing">
             <div class="mb-2">Congratulation! The swap process has already started!</div>
             <div class="font-normal relative mb-2"><b>Transaction hash: </b><a :href="explorerLink + transactionHash" target=_blank class="hover:underline">{{ transactionHash.substring(0, 7) + '...' + transactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
@@ -31,18 +43,40 @@
           <div class="flex justify-center mt-10 success_box success success-text" v-if="dispalyWaitForConfirmationMessage">
             <div style="border-top-color:transparent" class="inline-block mr-2 relative top-2 w-4 h-4 border-4 border-green-500 border-solid rounded-full animate-spin"></div> Please wait until transaction is confirmed
           </div>
-          <div v-if="isWalletConnected" class="text-xs flex items-center justify-end">
-            <div v-if="connectedWalletName === 'WC'" class="flex items-center gray-text-300">
-              <img src="@/modules/services/submodule/buySiriusCoins/img/icon-walletconnect.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
+          <div class="flex justify-between">
+            <div v-if="!submitMode" class="text-tsm mb-5 mt-5">Missed a swap submission ? <a @click="submitMode = !submitMode" class="hover:underline text-gray-500 hover:text-gray-800" >Retrieve remote txn hash to continue</a></div>
+            <div v-else></div>
+            <div v-if="isWalletConnected" class="text-xs flex items-center justify-end">
+              <div v-if="connectedWalletName === 'WC'" class="flex items-center gray-text-300">
+                <img src="@/modules/services/submodule/buySiriusCoins/img/icon-walletconnect.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
+              </div>
+              <div v-else class="flex items-center gray-text-300">
+                <img src="@/modules/services/submodule/buySiriusCoins/img/icon-metamask-fox.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
+              </div>
+              <button @click="manualDisconnect" class="ml-2 text-gray-500 flex items-center group hover:text-gray-900 border border-gray-500 p-1 rounded-md bg-gray-50">Disconnect <font-awesome-icon icon="times" class="text-gray-500 ml-1 group-hover:text-gray-900" /></button>
             </div>
-            <div v-else class="flex items-center gray-text-300">
-              <img src="@/modules/services/submodule/buySiriusCoins/img/icon-metamask-fox.svg" class="w-4 h-4 inline-block" />&nbsp;{{ tokenType(selectedChainId) }}&nbsp;{{ connectedAddress }}
-            </div>
-            <button @click="manualDisconnect" class="ml-2 text-gray-500 flex items-center group hover:text-gray-900 border border-gray-500 p-1 rounded-md bg-gray-50">Disconnect <font-awesome-icon icon="times" class="text-gray-500 ml-1 group-hover:text-gray-900" /></button>
+            <div v-else class="text-xs flex items-center justify-end text-gray-500 hover:text-gray-900 group duration-200 transition-all"><button @click="connectWallet" class="border border-gray-500 p-1 rounded-md bg-gray-50 hover:bg-gray-200 transition-all duration-200">Connect Wallet <font-awesome-icon icon="wallet" class="text-gray-500 ml-2 group-hover:text-gray-900" /></button></div>
+            
           </div>
-          <div v-else class="text-xs flex items-center justify-end text-gray-500 hover:text-gray-900 group duration-200 transition-all"><button @click="connectWallet" class="border border-gray-500 p-1 rounded-md bg-gray-50 hover:bg-gray-200 transition-all duration-200">Connect Wallet <font-awesome-icon icon="wallet" class="text-gray-500 ml-2 group-hover:text-gray-900" /></button></div>
           <div>
-            <BuyFormInput ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
+            <div class="block text-left" v-if="submitMode">
+              <div class="text-xs mb-2">Transaction Hash:</div>
+              <div class="w-full mt-2">
+                <div class="border border-gray-200 px-2 py-2 rounded-md">
+                  <div class="flex gap-2">
+                    <div class="flex flex-col w-full">
+                      <div class="uppercase text-gray-500 font-light text-txs text-left mb-1.5">{{ remoteNetworkName }} {{ remoteNetworkType }} Transaction Hash</div>
+                      <input type="text" v-model="transactionHash" @input="checkTxnValid = false"  class="w-full font-semibold text-tsm outline-none ">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button v-if="!isTxnHashVerified" class="blue-btn py-2 px-2 cursor-pointer text-center mt-2 disabled:opacity-50" :disabled="isDisabledCheckStatus" @click="checkRemoteTxn">{{ isCheckingTxn?'Checking...':'Check Remote Transaction' }}</button>
+              <div v-else class="text-xs mt-2 p-2 rounded-md bg-green-100 text-green-700 inline-block">Transaction Hash is verified. Please insert <span class="font-semibold font-mono">TRANSFER TO ADDRESS</span> to continue.</div>
+              <div class="inline-block text-red-500 text-xs ml-2" v-if="!selectedChainId">Please <b>Connect Wallet</b> to continue</div>
+              <button @click="submitMode=!submitMode; transactionHash = ''; isTxnHashVerified = false; isCheckingTxn = false; fromInputAmount= 0;" class="bg-gray-100 border-gray-300 border duration-200 transition-all hover:bg-gray-200 text-gray-600 text-xs rounded-md ml-2 py-1.5 px-2 cursor-pointer text-center mt-2">Cancel</button>
+            </div>
+            <BuyFormInput v-if="!submitMode" ref="buyFromComponent" formLabel="From" :tokens="stableCoins" v-model="fromInputAmount" :selectedToken="selectedFromToken" :amount="fromAmount" :tokenType="tokenType(selectedChainId)" @confirmedSelectToken="selectFromToken" />
             <BuyFormInputFlex ref="buyToComponent" formLabel="To" :tokens="siriusTokens" v-model="toInputAmount" :selectedToken="selectedToToken" :amount="toAmount" @confirmedSelectToken="selectToToken" :disabled="true" class="mt-5" />
           </div>
           <div class="flex mt-4">
@@ -111,6 +145,7 @@ export default {
     toggleSwitch,
   },
   setup(){
+    const submitMode = ref(false);
 
     const {t} = useI18n();
     const route = useRoute();
@@ -127,20 +162,50 @@ export default {
     const fromAmount = ref(12345.87);
     const fromInputAmount = ref(0);
     const toInputAmount = ref(0);
-    const recipient = ref(qpRecipient);
     const isSubmit = shallowRef(false);
     const tokenInvalid = ref(false);
+    const siriusTokenInvalid = ref(false);
+    const feeInvalid = ref(false);
 
     const transactionHash = ref('');
     const explorerLink = ref('');
+
+    const checkTxnValid = ref(false);
     
     const isChainIdValid = ref(false);
     let provider;
 
     const disabledBuy = computed(() => {
-      return tokenInvalid.value || !settingDone.value || !isChainIdValid.value || !isSupportedChainId.value || fromInputAmount.value < 1 || showAddressError.value || !isChecked.value || isSubmit.value
+
+      if(submitMode.value){
+        return siriusTokenInvalid.value 
+          || !settingDone.value 
+          || !isChainIdValid.value 
+          || !isSupportedChainId.value 
+          || showAddressError.value 
+          || !isChecked.value 
+          || fromInputAmount.value == 0 
+          || toInputAmount.value <= 0
+          || isSubmit.value
+          || feeInvalid.value
+          || transactionHash.value.trim() == ""
+          || !checkTxnValid.value
+      }
+
+      return tokenInvalid.value
+        || siriusTokenInvalid.value 
+        || !settingDone.value 
+        || !isChainIdValid.value 
+        || !isSupportedChainId.value 
+        || fromInputAmount.value < 1 
+        || showAddressError.value 
+        || !isChecked.value 
+        || isSubmit.value
+        || feeInvalid.value
+        || minimumAmountNotMeet.value
     });
 
+    const isTxnSubmissionFound = ref(false);
     const customErrorMessage = ref("");
     const dispalyWaitForConfirmationMessage = ref(false);
     const selectedRemoteSinkAddress = ref("");
@@ -155,25 +220,74 @@ export default {
     const priceUpdated = ref(false);
     const settingDone = ref(false);
     const isLoaded = ref(false);
+
+    const BASE_BYTE_SIZE = 337;
+    let FEE_PER_BYTE = 0;
+    let ADDITIONAL_COSIGNERS = 0;
+    let FEE_MULTIPLIER = 0;
+    let NATIVE_FEE_TOKEN_NAME = "";
+
     const selectedFromTokenPrice = computed(()=>{
       priceUpdated.value; // just to trigger auto recompute
-      return stableCoins.find(x => x.name === selectedFromToken.value).price;
+
+      let token = stableCoins.find(x => x.name === selectedFromToken.value); 
+
+      return token && token.priceUpdated ? token.price: 0;
     });
 
     const selectedToTokenPrice = computed(()=>{
       priceUpdated.value; // just to trigger auto recompute
-      return siriusTokens.value.find(x => x.name === selectedToToken.value).price;
+
+      let token = siriusTokens.value.find(x => x.name === selectedToToken.value); 
+
+      return token && token.priceUpdated ? token.price: 0;
+    });
+
+    const selectedToTokenDecimals = computed(()=>{
+      let token = siriusTokens.value.find(x => x.name.toLowerCase() === selectedToToken.value.toLowerCase());
+
+      return token ? token.divisibility : 0;
+    });
+
+    const nativeFee = computed(()=>{
+      settingDone.value;
+      return Helper.safeMultiply(BASE_BYTE_SIZE + (ADDITIONAL_COSIGNERS * 96) + exchangeRate.value.toString().length, FEE_PER_BYTE);
+    });
+
+    const minAmount = computed(()=>{
+      return Helper.safeMultiplyCeilDecimals(fee.value, 1.2, selectedToTokenDecimals.value);
+    });
+
+    const nativeTokenPrice = computed(()=>{
+      if(!settingDone.value || !priceUpdated.value){
+        return 0;
+      }
+      
+      let token = siriusTokens.value.find(x => x.name.toLowerCase() === NATIVE_FEE_TOKEN_NAME.toLowerCase());
+      
+      return token && token.priceUpdated ? token.price : 0;
     });
 
     const fee = computed(()=>{
-      settingDone.value; // just to trigger auto recompute
-      return siriusTokens.value.find(x => x.name === selectedToToken.value).fee;
+
+      if(!settingDone.value){
+        return 0;
+      }
+
+      let feeAmount = FEE_MULTIPLIER ?
+          Helper.safeMultiply(nativeFee.value, FEE_MULTIPLIER) : nativeFee.value;
+
+      if(selectedToToken.value.toLowerCase() !== NATIVE_FEE_TOKEN_NAME.toLowerCase()){
+
+        let totalFeeInUSD = Helper.safeMultiply(nativeTokenPrice.value, nativeFee.value);
+        feeAmount = Helper.safeDivideCeilDecimals(totalFeeInUSD, selectedToTokenPrice.value, selectedToTokenDecimals.value);
+      }
+
+      return feeAmount;
     });
 
-    let siriusTokenAtomicUnits = 1000000;
-
     const exchangeRate = computed(()=>{
-      return Math.trunc((selectedFromTokenPrice.value/ selectedToTokenPrice.value) * siriusTokenAtomicUnits) / siriusTokenAtomicUnits;
+      return Helper.safeDivideFloorDecimals(selectedFromTokenPrice.value, selectedToTokenPrice.value, selectedToTokenDecimals.value);
     });
 
     const selectFromToken = (token) => {
@@ -199,13 +313,25 @@ export default {
     }
 
     const updateBuyFromTokenBalance = ()=>{
-      buyFromComponent.value.updateSeletectedTokenBalance(selectedFromToken.value);
+      if(!submitMode.value){
+        buyFromComponent.value.updateSeletectedTokenBalance(selectedFromToken.value);
+      } 
     }
 
     // connect wallet section
     const ethereumChainId = ref(0);
     const bscChainId = ref(0);
     const remoteNetworkType = computed(()=> ethereumChainId.value === 1 ? "mainnet": "testnet");
+    const remoteNetworkName = computed(()=>{
+      if(selectedChainId.value === ethereumChainId.value){
+        return "ETH"
+      }else if(selectedChainId.value === bscChainId.value){
+        return "BSC";
+      }
+      else{
+        return "BSC / ETH";
+      }
+    });
     const selectedChainId = ref(0);
     const isWalletConnected = ref(false);
     const connectedWalletName = ref("");
@@ -324,6 +450,23 @@ export default {
       })
     }
 
+    const checkSelectedToTokenSupported = ()=>{
+      let siriusToken = siriusTokens.value.find(x => x.name.toLowerCase() === selectedToToken.value.toLowerCase());
+
+      if(siriusToken){
+
+        if(siriusToken.disabled){
+          siriusTokenInvalid.value = true;
+        }
+        else{
+          siriusTokenInvalid.value = false;
+        }
+      }
+      else{
+        siriusTokenInvalid.value = true;
+      }
+    }
+
     const checkSelectedTokenSupported = ()=>{
       if(selectedChainId.value === ethereumChainId.value){
         tokenInvalid.value = ethStableCoins.find(x => x.name === selectedFromToken.value).disabled;
@@ -332,6 +475,7 @@ export default {
         tokenInvalid.value = bscStableCoins.find(x => x.name === selectedFromToken.value).disabled;
       }
       else{
+        
         tokenInvalid.value = true;
       }
     }
@@ -356,14 +500,19 @@ export default {
           ethDisabled.value = false;
         }
 
+        FEE_PER_BYTE = serviceInfo.data.feeInfo.feePerByte;
+        ADDITIONAL_COSIGNERS = serviceInfo.data.feeInfo.cosigners;
+        FEE_MULTIPLIER = serviceInfo.data.feeInfo.multiplier ? serviceInfo.data.feeInfo.multiplier : 0;
+        NATIVE_FEE_TOKEN_NAME = serviceInfo.data.feeInfo.tokenName;
+
         const siriusTokensInfo = serviceInfo.data.siriusToken;
 
-        for(let siriusToken of siriusTokensInfo){
+        for(let siriusToken of siriusTokens.value){
 
-          let currentSiriusToken = siriusTokens.value.find(x => x.name == siriusToken.name.toUpperCase()); 
+          let currentSiriusToken = siriusTokensInfo.find(x => x.name.toUpperCase() == siriusToken.name.toUpperCase()); 
 
-          if(currentSiriusToken){
-            currentSiriusToken.fee = siriusToken.feeAmount;
+          if(!currentSiriusToken){
+            siriusToken.disabled = true;
           }
         }
 
@@ -404,6 +553,7 @@ export default {
         settingDone.value = true;
       }
       catch(error){
+        console.log(error);
         isLoaded.value = true;
         settingDone.value = false;
       }
@@ -414,14 +564,24 @@ export default {
       let prices = await getCurrentPriceUSD(SwapUtils.checkSwapPrice(swapData.priceConsultURL));
 
       for(let siriusToken of siriusTokens.value){
+
         if(prices[siriusToken.name.toLowerCase()]){
           siriusToken.price = prices[siriusToken.name.toLowerCase()];
+          siriusToken.priceUpdated = true;
+        }
+        else{
+          siriusToken.priceUpdated = false;
         }
       }
 
       for(let stableCoin of stableCoins){
+
         if(prices[stableCoin.name.toLowerCase()]){
           stableCoin.price = prices[stableCoin.name.toLowerCase()];
+          stableCoin.priceUpdated = true;
+        }
+        else{
+          stableCoin.priceUpdated = false;
         }
       }
 
@@ -474,7 +634,7 @@ export default {
     };
 
     const handleConnect = (connectData)=>{
-      // MetaMask call after change to external chain 
+      // MetaMask call after change to external chain
       handleChainChanged(connectData.chainId);
     }
 
@@ -575,9 +735,207 @@ export default {
     checkWalletConnected();
 
     const swapTimestamp = ref('');
+
+    const checkRemoteTxn = async() =>{
+      isCheckingTxn.value = true;
+      customErrorMessage.value = "";
+      isTxnSubmissionFound.value = false;
+      checkTxnValid.value = false; 
+      try {
+        transactionHash.value = transactionHash.value.trim();
+
+        if(transactionHash.value === ""){
+          customErrorMessage.value = "Please fill in transaction hash";
+          isCheckingTxn.value = false;
+          return;
+        }
+        
+        if(!provider){
+          customErrorMessage.value = "Please connect wallet";
+          isCheckingTxn.value = false;
+          return;
+        }
+
+        let url = '';
+        if(remoteNetworkName.value == 'BSC'){
+          url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'bsc', transactionHash.value);
+        }
+        else if(remoteNetworkName.value == 'ETH'){
+          url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'eth', transactionHash.value);
+        }
+        else{
+          customErrorMessage.value = "Please select supported network at wallet";
+          isCheckingTxn.value = false;
+          return;
+        }
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if(response.status == 200){
+          isTxnSubmissionFound.value = true;
+          isCheckingTxn.value = false;
+          return;
+        }
+
+        const web3Provider = new ethers.providers.Web3Provider(provider);
+
+        let transactionReceipt = await web3Provider.getTransactionReceipt(transactionHash.value);
+
+        if(transactionReceipt && selectedChainId.value === bscChainId.value){
+
+          const bscCoin = bscStableCoins.find(x => x.contractAddress.toLowerCase() == transactionReceipt.to.toLowerCase()); 
+
+          if(bscCoin && !bscCoin.disabled){
+            selectedFromToken.value = bscCoin.name;
+            fromInputAmount.value = Helper.safeDivide(Helper.bigNumberFromString(transactionReceipt.logs[0].data), Math.pow(10, bscCoin.decimals));
+            selectedContractAddress.value = bscCoin.contractAddress;
+            isTxnHashVerified.value = true;
+          }
+          else{
+            customErrorMessage.value = "Invalid BSC token";
+            isCheckingTxn.value = false;
+            return false;
+          }
+        }
+        else if(transactionReceipt && selectedChainId.value === ethereumChainId.value){
+          const ethCoin = ethStableCoins.find(x => x.contractAddress.toLowerCase() == transactionReceipt.to.toLowerCase()); 
+
+          if(ethCoin && !ethCoin.disabled){
+            selectedFromToken.value = ethCoin.name;
+            fromInputAmount.value = Helper.safeDivide(Helper.bigNumberFromString(transactionReceipt.logs[0].data), Math.pow(10, ethCoin.decimals));
+            selectedContractAddress.value = ethCoin.contractAddress;
+            isTxnHashVerified.value = true;
+          }
+          else{
+            customErrorMessage.value = "Invalid ETH token";
+            isCheckingTxn.value = false;
+            return false;
+          }
+        }
+        else{
+          customErrorMessage.value = "Remote transaction not found/ invalid";
+          return false;
+        }
+
+        let transactionStatus = await web3Provider.getTransaction(transactionHash.value);
+        
+        if(transactionReceipt && transactionReceipt.status === 1){ // when transaciton is confirmed but status is 1
+
+            if(transactionStatus.to.toLowerCase() !== selectedContractAddress.value.toLowerCase() 
+              || transactionReceipt.logs.length !== 1 || 
+              transactionReceipt.logs[0].topics[0] !== "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+              || transactionReceipt.logs[0].topics[2] !== "0x" + "0".repeat(66 - selectedRemoteSinkAddress.value.length) + selectedRemoteSinkAddress.value.substring(2).toLowerCase()){
+                customErrorMessage.value = "Remote transaction invalid";
+                isTxnHashVerified.value = false;
+                isCheckingTxn.value = false;
+                return false;
+            }
+          
+        }else if(transactionReceipt && transactionReceipt.status === 0){ // transaction is confirmed but status is 0 - fee too low
+          customErrorMessage.value = "Remote transaction failed";
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
+          return false;
+        }else if(!transactionReceipt && !transactionStatus){ // transaction hash is not found
+          customErrorMessage.value = "Remote transaction not found";
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
+          return false;
+        }else{
+          customErrorMessage.value = "Remote transaction unknown status";
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
+          return false;
+        }
+        
+      }catch(error){
+        console.log(error);
+        customErrorMessage.value = "Transaction checking failed";
+        isTxnHashVerified.value = false;
+        isCheckingTxn.value = false;
+      }
+
+      checkTxnValid.value = true;
+    }
+
+    const doResubmission = async()=>{
+      try {
+        isSubmit.value = true;
+        const web3Provider = new ethers.providers.Web3Provider(provider);
+        const signer = web3Provider.getSigner();
+        const address = await signer.getAddress();
+
+        let signedMessageSignature;
+
+        if (provider.wc) {
+          signedMessageSignature = await provider.send(
+              'personal_sign',
+              [ ethers.utils.hexlify(ethers.utils.toUtf8Bytes(siriusAddress.value)), address.toLowerCase() ]
+          );
+        }
+        else { 
+          signedMessageSignature = await signer.signMessage(siriusAddress.value);
+        }
+
+        let txnHash = transactionHash.value;
+
+        const data = {
+          fromToken: selectedFromToken.value,
+          toToken: selectedToToken.value,
+          recipient: siriusAddress.value,
+          signature: signedMessageSignature,
+          txnInfo: {
+            txnHash: txnHash,
+            network: selectedChainId.value === bscChainId.value ? "BSC" : "ETH"
+          }
+        };
+
+        const response = await fetch(SwapUtils.getIncoming_SwapTransfer_URL(swapData.swap_IN_SERVICE_URL), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+
+        if(response.status == 200 || response.status == 201 || response.status == 202){
+          const serverResponseData = await response.json();
+
+          console.log(serverResponseData);
+          swapTimestamp.value = Helper.IsoTimeRemoveFormat(serverResponseData.timestamp);
+
+          processing.value = true;
+          submitMode.value = false;
+          transactionHash.value = '';
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
+          fromInputAmount.value= 0;
+          isChecked.value = false;
+          siriusAddress.value = '';
+        }
+        else{
+          submitFailed.value = true;
+        }
+        
+      }catch(error){
+        isSubmit.value = false;
+      }
+    }
+
     const buySiriusToken = async ()=>{
 
       customErrorMessage.value = "";
+      isTxnSubmissionFound.value = false;
+      checkRecipient();
+
+      if(submitMode.value){
+        doResubmission();
+        return;
+      }
 
       try {
         isSubmit.value = true;
@@ -693,6 +1051,9 @@ export default {
 
           processing.value = true;
           searchAccountStableCoinsBalance();
+          fromInputAmount.value= 0;
+          isChecked.value = false;
+          siriusAddress.value = '';
         }
         else{
           submitFailed.value = true;
@@ -709,6 +1070,7 @@ export default {
     const showAddressError = shallowRef(true);
     const toggleContact = shallowRef(false);
     const siriusAddress = ref(qpRecipient);
+    const minimumAmountNotMeet = ref(false);
 
     const checkRecipient = () =>{
       try {
@@ -729,12 +1091,18 @@ export default {
 
     // watcher section
     watch([fromInputAmount, exchangeRate], (newValue)=>{
-      toInputAmount.value = newValue[0] * newValue[1];
+      toInputAmount.value = Helper.safeMultiplyFloorDecimals(newValue[0], newValue[1], selectedToTokenDecimals.value);
+
+      minimumAmountNotMeet.value = toInputAmount.value < minAmount.value ? true : false;
     });
 
     watch(selectedFromToken, (newValue)=>{
       updateSelectedContractAddress();
       checkSelectedTokenSupported();
+    });
+
+    watch(selectedToToken, (newValue)=>{
+      checkSelectedToTokenSupported();
     });
 
     watch([selectedChainId, connectedAddress], (newChainId)=>{
@@ -749,6 +1117,19 @@ export default {
       }
     })
 
+    watch(fee, (newFee)=>{
+      
+      if(!priceUpdated.value){
+        feeInvalid.value = false;
+      }
+      else if(nativeTokenPrice.value && selectedToTokenPrice.value && selectedFromTokenPrice.value){
+        feeInvalid.value = false;
+      }
+      else{
+        feeInvalid.value = true;
+      }
+    });
+
     const isChecked = ref(false);
 
     const saveCertificate = () => {
@@ -757,6 +1138,7 @@ export default {
     };
 
     let swapData;
+    // const initDone = ref(false);
 
     const init = async() =>{
       swapData= new ChainSwapConfig(networkState.chainNetworkName);
@@ -766,6 +1148,7 @@ export default {
       explorerLink.value = selectedChainId.value === bscChainId.value ? swapData.BSCScanUrl : swapData.ETHScanUrl;
       getCurrentPrice();
       fetchServiceInfo();
+      // initDone.value = true;
     }
     
     if(AppState.isReady){
@@ -779,7 +1162,41 @@ export default {
       });
     }
 
+    const isCheckingTxn = shallowRef(false);
+    const isTxnHashVerified = shallowRef(false);
+
+    const isDisabledCheckStatus = computed(() => {
+      if(isCheckingTxn.value){
+        return true;
+      }
+      if(selectedChainId.value === bscChainId.value){
+        // check for BSC txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2) === '0x'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else if(selectedChainId.value === ethereumChainId.value){
+        // check for ETH txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2) === '0x'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else{
+        return true;
+      }
+    });
+
     return {
+      isCheckingTxn,
+      isTxnHashVerified,
       isLoaded,
       stableCoins,
       siriusTokens,
@@ -815,16 +1232,27 @@ export default {
       isSubmit,
       isSupportedChainId,
       remoteNetworkType,
+      remoteNetworkName,
       settingDone,
       tokenInvalid,
+      siriusTokenInvalid,
       processing,
       submitFailed,
       fee,
       dispalyWaitForConfirmationMessage,
       customErrorMessage,
+      isTxnSubmissionFound,
       explorerLink,
       transactionHash,
       saveCertificate,
+      nativeTokenPrice,
+      feeInvalid,
+      minimumAmountNotMeet,
+      minAmount,
+      submitMode,
+      checkRemoteTxn,
+      checkTxnValid,
+      isDisabledCheckStatus,
     }
   }
 }

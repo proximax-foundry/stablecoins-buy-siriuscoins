@@ -2,7 +2,7 @@
   <div>
     <div class='lg:w-9/12 ml-2 mr-2 lg:ml-auto lg:mr-auto mt-5 bg-white border border-white rounded-md shadow-lg'>
       <div class='mt-6 px-6 py-10 filter text-center'>
-        <div class="text-md mb-3">Check Buy Status</div>
+        <div class="text-md mb-3">Check Crosschain Swap Status</div>
         <transition name="slide">
           <div class="mt-10" :class="statusNotificationClassStyle" v-if="isSuccess">
             <div class="font-normal">
@@ -15,8 +15,12 @@
                 <div class="font-semibold text-left"><a :href="explorerLink() + siriusTransactionHash" target=_blank class="hover:underline">{{ siriusTransactionHash.substring(0, 7) + '...' + siriusTransactionHash.slice(-7) }} <font-awesome-icon icon="external-link-alt" class="ml-1 w-3 h-3 self-center inline-block"></font-awesome-icon></a></div>
               </div>
               <div class="md:flex my-3 md:my-1">
-                <div class="md:w-56 text-left md:text-right mr-4">Status</div>
-                <div class="font-semibold text-left">{{ txnStatus }}</div>
+                <div class="md:w-56 text-left md:text-right mr-4">{{ remoteNetwork }} Status</div>
+                <div class="font-semibold text-left">{{ remoteTxnStatus }}</div>
+              </div>
+              <div class="md:flex my-3 md:my-1" if="siriusTxnStatus">
+                <div class="md:w-56 text-left md:text-right mr-4">Sirius Status</div>
+                <div class="font-semibold text-left">{{ siriusTxnStatus }}</div>
               </div>
               <div class="md:flex my-3 md:my-1">
                 <div class="md:w-56 text-left md:text-right mr-4">Sirius Recipient Address</div>
@@ -44,6 +48,7 @@
             <div class="flex items-center cursor-pointer">
               <select class="cursor-pointer outline-none hover:bg-blue-50 p-2 pl-0 transition-all duration-200 rounded-lg" v-model="hashType">
                 <option value="BSC">BSC Transaction Hash</option>
+                <option value="ETH">ETH Transaction Hash</option>
                 <option value="Sirius">Sirius Transaction Hash</option>
               </select>
             </div>
@@ -127,7 +132,17 @@ export default {
       if(hashType.value == 'BSC'){
         // check for BSC txn type
         if(transactionHash.value.length == 66){
-          if(transactionHash.value.substring(0, 2).toUpperCase() == '0X'){
+          if(transactionHash.value.substring(0, 2) === '0x'){
+            return false
+          }
+          return true;
+        }else{
+          return true;
+        }
+      }else if(hashType.value == 'ETH'){
+        // check for ETH txn type
+        if(transactionHash.value.length == 66){
+          if(transactionHash.value.substring(0, 2) === '0x'){
             return false
           }
           return true;
@@ -151,6 +166,8 @@ export default {
     const siriusTransactionHash = ref('');
     const remoteTxnHash = ref('');
     const txnStatus = ref('');
+    const remoteTxnStatus = ref('');
+    const siriusTxnStatus = ref('');
     const time = ref('');
     const explorerLink = () =>{
       if(!networkState.currentNetworkProfile){
@@ -159,7 +176,7 @@ export default {
       return networkState.currentNetworkProfile.chainExplorer.url + '/' + networkState.currentNetworkProfile.chainExplorer.hashRoute + '/';
     }
     const remoteExplorerLink = ref('');
-    
+
     const checkStatus = async() => {
       isLoaded.value = true;
       isSuccess.value = false;
@@ -169,7 +186,11 @@ export default {
         let url = '';
         if(hashType.value == 'BSC'){
           url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'bsc', transactionHash.value);
-        }else{
+        }
+        else if(hashType.value == 'ETH'){
+          url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckRemoteStatus_URL(swapData.swap_IN_SERVICE_URL, 'eth', transactionHash.value);
+        }
+        else{
           url = SwapUtils.getIncoming_BSCBuySiriusTokenCheckStatus_URL(swapData.swap_IN_SERVICE_URL, transactionHash.value);
         }
         const response = await fetch(url, {
@@ -186,33 +207,50 @@ export default {
           remoteExplorerLink.value = remoteNetwork.value === 'BSC'?swapData.BSCScanUrl:swapData.ETHScanUrl;
           if(json.siriusTxnHash){
             siriusTransactionHash.value = json.siriusTxnHash;
+            remoteTxnStatus.value = 'SUCCESS';
             try{
               if(AppState.isReady){
                 let siriusTxn = await AppState.chainAPI.transactionAPI.getTransactionStatus(json.siriusTxnHash);
                 if(siriusTxn.group == 'partial' || siriusTxn.group == 'unconfirmed'){
-                  txnStatus.value = 'PENDING';
+                  siriusTxnStatus.value = 'PENDING';
                   statusNotificationClassStyle.value = 'pending_box pending';
                 }else if(siriusTxn.group == 'confirmed'){
-                  txnStatus.value = 'SUCCESS';
+                  siriusTxnStatus.value = 'SUCCESS';
                   statusNotificationClassStyle.value = 'success_box success';
                 }else{
-                  txnStatus.value = 'Sirius Transaction FAILED';
+                  siriusTxnStatus.value = 'FAILED';
                   statusNotificationClassStyle.value = 'error_box error';
                 }
               }
             }catch(err){
-              txnStatus.value = 'Sirius Transaction NOT FOUND. Please check again within 30 seconds if it is a new swap.';
+              siriusTxnStatus.value = 'Sirius Transaction NOT FOUND. Please check again within 30 seconds if it is a new swap.';
               statusNotificationClassStyle.value = 'error_box error';
             }
           }else{
-            txnStatus.value = 'PENDING';
-            statusNotificationClassStyle.value = 'pending_box pending';
+            if(json.status == 'pending'){
+              remoteTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }else if(json.status == 'pending_confirmations' || json.status == 'pending_wallet'){
+              remoteTxnStatus.value = 'PENDING - ' + json.status;
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }else if(json.status == 'invalid' || json.status == 'cut_off_passed' || json.status == 'nothing_to_send'){
+              remoteTxnStatus.value = 'ERROR - ' + json.status;
+              statusNotificationClassStyle.value = 'error_box error';
+            }else if(json.status == 'complete'){
+              remoteTxnStatus.value = 'SUCCESS';
+              siriusTxnStatus.value = 'PENDING';
+              statusNotificationClassStyle.value = 'pending_box pending';
+            }
           }
           siriusAddress.value = Helper.createAddress(json.siriusAddress).pretty();
           amount.value = Helper.convertToCurrency(json.receiveAmount, 0) + ' ' + json.toToken;
           let date = new Date(json.timeStamp);
           time.value = date.toLocaleTimeString();
           isSuccess.value = true;
+          isLoaded.value = false;
+        }
+        else if(response.status == 400){
+          customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
           isLoaded.value = false;
         }else if(response.status == 404){
           customErrorMessage.value = 'Transaction not found. This transaction hash is not a valid swap transaction.';
@@ -225,7 +263,6 @@ export default {
       }
     };
 
-    
 
     return {
       statusNotificationClassStyle,
@@ -240,7 +277,8 @@ export default {
       customErrorMessage,
       siriusAddress,
       checkStatus,
-      txnStatus,
+      remoteTxnStatus,
+      siriusTxnStatus,
       time,
       isSuccess,
       isLoaded,
@@ -251,10 +289,10 @@ export default {
 </script>
 <style scoped lang="scss">
 .slide-enter-active {
-  -moz-transition-duration: 1s;
-  -webkit-transition-duration: 1s;
-  -o-transition-duration: 1s;
-  transition-duration: 1s;
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  -o-transition-duration: 0.3s;
+  transition-duration: 0.3s;
   -moz-transition-timing-function: ease-in-out;
   -webkit-transition-timing-function: ease-in-out;
   -o-transition-timing-function: ease-in-out;
@@ -262,10 +300,10 @@ export default {
 }
 
 .slide-leave-active {
-  -moz-transition-duration: 1s;
-  -webkit-transition-duration: 1s;
-  -o-transition-duration: 1s;
-  transition-duration: 1s;
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  -o-transition-duration: 0.3s;
+  transition-duration: 0.3s;
   -moz-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
   -webkit-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
   -o-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
@@ -274,7 +312,7 @@ export default {
 
 .slide-enter-to,
 .slide-leave-from {
-  max-height: 1000px;
+  max-height: 500px;
   overflow: hidden;
 }
 
