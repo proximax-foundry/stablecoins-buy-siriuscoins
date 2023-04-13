@@ -830,23 +830,33 @@ export default {
               transactionReceipt.logs[0].topics[0] !== "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
               || transactionReceipt.logs[0].topics[2] !== "0x" + "0".repeat(66 - selectedRemoteSinkAddress.value.length) + selectedRemoteSinkAddress.value.substring(2).toLowerCase()){
                 customErrorMessage.value = "Remote transaction invalid";
+                isTxnHashVerified.value = false;
+                isCheckingTxn.value = false;
                 return false;
             }
           
         }else if(transactionReceipt && transactionReceipt.status === 0){ // transaction is confirmed but status is 0 - fee too low
           customErrorMessage.value = "Remote transaction failed";
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
           return false;
         }else if(!transactionReceipt && !transactionStatus){ // transaction hash is not found
           customErrorMessage.value = "Remote transaction not found";
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
           return false;
         }else{
           customErrorMessage.value = "Remote transaction unknown status";
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
           return false;
         }
         
       }catch(error){
         console.log(error);
         customErrorMessage.value = "Transaction checking failed";
+        isTxnHashVerified.value = false;
+        isCheckingTxn.value = false;
       }
 
       checkTxnValid.value = true;
@@ -899,6 +909,13 @@ export default {
           swapTimestamp.value = Helper.IsoTimeRemoveFormat(serverResponseData.timestamp);
 
           processing.value = true;
+          submitMode.value = false;
+          transactionHash.value = '';
+          isTxnHashVerified.value = false;
+          isCheckingTxn.value = false;
+          fromInputAmount.value= 0;
+          isChecked.value = false;
+          siriusAddress.value = '';
         }
         else{
           submitFailed.value = true;
@@ -1034,6 +1051,9 @@ export default {
 
           processing.value = true;
           searchAccountStableCoinsBalance();
+          fromInputAmount.value= 0;
+          isChecked.value = false;
+          siriusAddress.value = '';
         }
         else{
           submitFailed.value = true;
